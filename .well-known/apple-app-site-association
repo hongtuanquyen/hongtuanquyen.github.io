@@ -1,0 +1,31 @@
+{
+    "applinks": {
+      "apps": [],
+      "details": [
+          {
+              "appID": "S48H95748Z.com.jyukenic.IBP.dev",
+              "paths": [
+                  "*"
+              ]
+          },
+          {
+              "appID": "S48H95748Z.com.jyukenic.IBP.stg",
+              "paths": [
+                  "*"
+              ]
+          },
+          {
+              "appID": "S48H95748Z.com.jyukenic.IBP",
+              "paths": [
+                  "*"
+              ]
+          },
+          {
+              "appID": "D4TF7UPLDC.com.jyukenic.IBP.dev",
+              "paths": [
+                  "*"
+              ]
+          }
+      ]
+    }
+}
