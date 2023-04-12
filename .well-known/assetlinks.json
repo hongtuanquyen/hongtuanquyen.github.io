@@ -1,0 +1,11 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.hongtuanquyen.studyapp",
+    "sha256_cert_fingerprints":
+    [
+      "64:A7:91:DA:80:59:CE:60:93:A1:44:0E:EF:F2:EE:A4:B8:BE:E5:89:99:A1:69:6F:AF:34:B9:D9:FB:F8:05:4A"
+    ]
+  }
+}]
