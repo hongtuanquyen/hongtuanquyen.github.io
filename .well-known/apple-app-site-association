@@ -1,0 +1,10 @@
+{
+  "applinks": {
+      "details": [
+      {
+        "appID": "8QUASUBFPZ.com.hongtuanquyen.studyapp",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
