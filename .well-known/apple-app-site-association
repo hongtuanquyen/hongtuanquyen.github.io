@@ -8,6 +8,10 @@
       {
         "appID": "H44EV7LM95.jp.co.recruit.oshitas.dev",
         "paths": ["*"]
+      },
+      {
+        "appID": "XCXR6M8G4U.jp.co.recruit.OSHITAS.oshitas.iPhone.1",
+        "paths": ["*"]
       }
     ]
   }
