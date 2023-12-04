@@ -7,7 +7,7 @@
       },
       {
         "appID": "H44EV7LM95.jp.co.recruit.oshitas.dev",
-        "paths": ["*"]
+        "paths": ["/app", "/app/register-memo", "/app/schedule/*"]
       },
       {
         "appID": "XCXR6M8G4U.jp.co.recruit.OSHITAS.oshitas.iPhone.1",
