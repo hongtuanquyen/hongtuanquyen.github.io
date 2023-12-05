@@ -12,6 +12,7 @@
           "/app/reacted-events",
           "/app/register-memo",
           "/app/select-talents",
+          "/app/settings",
           "/app/schedule/*"
         ]
       },
