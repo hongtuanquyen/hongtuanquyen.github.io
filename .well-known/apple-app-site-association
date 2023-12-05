@@ -8,11 +8,7 @@
       {
         "appID": "H44EV7LM95.jp.co.recruit.oshitas.dev",
         "paths": [
-          "/app",
-          "/app/reacted-events",
-          "/app/register-memo",
-          "/app/select-talents",
-          "/app/schedule/*"
+          "/app"
         ]
       },
       {
