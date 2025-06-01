@@ -1,37 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Cookie Viewer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    .cookie-box {
-      background-color: #f2f2f2;
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-top: 10px;
-      white-space: pre-wrap;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redirecting...</title>
 </head>
 <body>
-  <h1>Cookies sent from your browser:</h1>
-  <div id="cookie-display" class="cookie-box">
-    Loading cookies...
-  </div>
+  <h1>Redirecting to cookies.html...</h1>
 
   <script>
-    const cookieBox = document.getElementById('cookie-display');
-    const cookieString = document.cookie;
-
-    if (cookieString) {
-      cookieBox.textContent = cookieString;
-    } else {
-      cookieBox.textContent = "No cookies found.";
-    }
+    // Tự động điều hướng sau 2 giây
+    setTimeout(() => {
+      window.location.href = 'cookies.html';
+    }, 2000);
   </script>
 </body>
 </html>
