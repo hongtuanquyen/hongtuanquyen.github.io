@@ -2,14 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Cookie Test Page</title>
+  <title>Cookie Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .cookie-box {
+      background-color: #f2f2f2;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
-  <h1>Cookie Received by Browser</h1>
-  <p id="cookie-display"></p>
+  <h1>Cookies sent from your browser:</h1>
+  <div id="cookie-display" class="cookie-box">
+    Loading cookies...
+  </div>
 
   <script>
-    document.getElementById('cookie-display').innerText = document.cookie;
+    const cookieBox = document.getElementById('cookie-display');
+    const cookieString = document.cookie;
+
+    if (cookieString) {
+      cookieBox.textContent = cookieString;
+    } else {
+      cookieBox.textContent = "No cookies found.";
+    }
   </script>
 </body>
 </html>
