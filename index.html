@@ -1,12 +1,15 @@
-<html>
-  <head>
-    <title>This is the title of the webpage!</title>
-  </head>
-  <body>
-    <p><a href="https://runsystemvinwonder.page.link/7Yoh">Test Dynamic Links</a></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cookie Test Page</title>
+</head>
+<body>
+  <h1>Cookie Received by Browser</h1>
+  <p id="cookie-display"></p>
 
-    <p><a href="https://hongtuanquyen.github.io">Test deep link hongtuanquyen.github.io/</a></p>
-
-    <p><a href="abc://aaa.com">Test custom scheme ios</a></p>
-  </body>
+  <script>
+    document.getElementById('cookie-display').innerText = document.cookie;
+  </script>
+</body>
 </html>
