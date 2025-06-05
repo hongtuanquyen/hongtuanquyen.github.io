@@ -1,18 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redirecting...</title>
+  <meta charset="UTF-8">
+  <title>Check UI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #calendarInput {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <h1>Redirecting to cookies.html...</h1>
+  <button id="openCalendar">Chọn ngày</button>
+  <input type="text" id="calendarInput" />
+  <p id="result"></p>
 
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
-    // Tự động điều hướng sau 2 giây
-    setTimeout(() => {
-      window.location.href = 'cookies.html';
-    }, 2000);
+    const calendar = flatpickr("#calendarInput", {
+      onChange: function(selectedDates, dateStr) {
+        document.getElementById("result").textContent = "Bạn đã chọn: " + dateStr;
+      },
+      clickOpens: false // Không tự mở khi focus
+    });
+
+    document.getElementById("openCalendar").addEventListener("click", () => {
+      calendar.open(); // Mở popup khi nhấn button
+    });
   </script>
 </body>
 </html>
