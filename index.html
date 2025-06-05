@@ -3,14 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <title>Check UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Added for responsiveness -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
+      margin: 0;
+      background: #f9f9f9;
     }
     #calendarInput {
       display: none;
+    }
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: sans-serif;
+      margin-top: 20px;
+    }
+
+    .switch {
+      position: relative;
+      width: 56px;
+      height: 28px;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background: linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%);
+      transition: background 0.4s;
+      border-radius: 28px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .slider:before {
+      content: "";
+      position: absolute;
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      transition: transform 0.4s, box-shadow 0.2s;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(90deg, #4f8cff 0%, #38d39f 100%);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(28px);
+      box-shadow: 0 2px 12px rgba(76,175,80,0.25);
+    }
+
+    .switch input:focus + .slider {
+      box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+    }
+
+    button, input[type="text"] {
+      font-size: 1.1em;
+      padding: 12px 18px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #result {
+      font-size: 1em;
+      margin-top: 10px;
+      color: #333;
+    }
+
+    /* Responsive styles */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .switch-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      button, input[type="text"] {
+        font-size: 1em;
+        padding: 10px 12px;
+      }
+      .switch {
+        width: 40px;
+        height: 20px;
+      }
+      .slider:before {
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+      }
+      input:checked + .slider:before {
+        transform: translateX(18px);
+      }
     }
   </style>
 </head>
@@ -18,6 +124,14 @@
   <button id="openCalendar">Chọn ngày</button>
   <input type="text" id="calendarInput" />
   <p id="result"></p>
+
+  <div class="switch-container">
+    <label class="switch">
+      <input type="checkbox" id="mySwitch">
+      <span class="slider"></span>
+    </label>
+    <span id="switchLabel">OFF</span>
+  </div>
 
   <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -31,6 +145,16 @@
 
     document.getElementById("openCalendar").addEventListener("click", () => {
       calendar.open(); // Mở popup khi nhấn button
+    });
+  </script>
+
+  <script>
+    // Fix: Use correct IDs for switch and label
+    const toggle = document.getElementById("mySwitch");
+    const status = document.getElementById("switchLabel");
+
+    toggle.addEventListener("change", function () {
+      status.textContent = this.checked ? "ON" : "OFF";
     });
   </script>
 </body>
