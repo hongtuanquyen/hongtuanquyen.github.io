@@ -4,6 +4,10 @@
       {
         "appID": "8QUASUBFPZ.com.hongtuanquyen.studyapp",
         "paths": ["*"]
+      },
+      {
+        "appID": "P82S49663G.gzr.bsd.dev",
+        "paths": ["*"]
       }
     ]
   }
