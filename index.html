@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>User Agent Viewer</title>
+    <title>User Agent & Cookie Viewer</title>
     <style>
       body {
         font-family: sans-serif;
         padding: 20px;
         background-color: #f9f9f9;
       }
-      h1 {
+      h1, h2 {
         color: #333;
       }
-      #ua {
+      .info-box {
         margin-top: 10px;
         padding: 10px;
         background: #eee;
@@ -36,7 +36,10 @@
   </head>
   <body>
     <h1>Your User Agent:</h1>
-    <div id="ua">Loading...</div>
+    <div id="ua" class="info-box">Loading...</div>
+
+    <h2>Your Cookies:</h2>
+    <div id="cookie" class="info-box">Loading...</div>
 
     <div class="links">
       <h2>Quick Links:</h2>
@@ -46,6 +49,7 @@
 
     <script>
       document.getElementById('ua').textContent = navigator.userAgent;
+      document.getElementById('cookie').textContent = document.cookie || 'No cookies set.';
     </script>
   </body>
 </html>
