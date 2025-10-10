@@ -6,70 +6,52 @@
   <title>Upload Test</title>
 </head>
 <body>
-  <h2>Test Upload Image a</h2>
-
-  <input 
-    type="file" 
-    id="fileInput" 
-    accept="image/*"
-  />
+  <h2>Test Upload Image</h2>
+  <button id="uploadBtn">📸 Chọn ảnh</button>
 
   <br/><br/>
   <img id="preview" style="max-width: 100%; height: auto; display: none;" />
   <p id="status" style="font-weight: bold; color: blue;"></p>
 
   <script>
-    const fileInput = document.getElementById('fileInput');
-    const preview = document.getElementById('preview');
-    const statusText = document.getElementById('status');
-    let pickerOpened = false;
+    const uploadBtn = document.getElementById("uploadBtn");
+    const preview = document.getElementById("preview");
+    const statusText = document.getElementById("status");
 
+    // Gửi message cho app React Native
     function sendToApp(data) {
-      if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+      if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(JSON.stringify(data));
       } else {
-        console.log('[DEBUG] Not in WebView:', data);
+        console.log("[DEBUG] Not in WebView:", data);
       }
     }
 
-    // Khi người dùng tap vào nút Upload
-    fileInput.addEventListener('click', () => {
-      pickerOpened = true;
-      statusText.textContent = '🟡 Đang mở Gallery...';
-      statusText.style.color = 'orange';
-      sendToApp({ type: 'pickerOpened' });
+    // Khi nhấn nút upload
+    uploadBtn.addEventListener("click", () => {
+      statusText.textContent = "🟡 Đang mở picker...";
+      statusText.style.color = "orange";
+      sendToApp({ type: "openPicker" });
     });
 
-    // Khi chọn ảnh thành công
-    fileInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      pickerOpened = false;
-
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          preview.src = e.target.result;
-          preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-
-        statusText.textContent = '📸 Upload thành công!';
-        statusText.style.color = 'green';
-        sendToApp({ type: 'pickerClosed', action: 'upload' });
-      }
-    });
-
-    // Dò khi picker bị đóng mà không chọn ảnh
-    window.addEventListener('focus', () => {
-      if (pickerOpened) {
-        setTimeout(() => {
-          if (!fileInput.files.length) {
-            statusText.textContent = '❌ Đã hủy chọn ảnh';
-            statusText.style.color = 'red';
-            sendToApp({ type: 'pickerClosed', action: 'cancel' });
+    // Nhận message từ React Native
+    window.addEventListener("message", (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "pickerClosed") {
+          if (data.action === "upload" && data.image) {
+            statusText.textContent = "✅ Upload thành công!";
+            statusText.style.color = "green";
+            preview.src = data.image;
+            preview.style.display = "block";
+          } else if (data.action === "cancel") {
+            statusText.textContent = "❌ Đã hủy chọn ảnh";
+            statusText.style.color = "red";
+            preview.style.display = "none";
           }
-          pickerOpened = false;
-        }, 500);
+        }
+      } catch (e) {
+        console.log("Invalid message", e);
       }
     });
   </script>
