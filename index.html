@@ -1,56 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>User Agent & Cookie Viewer</title>
+    <title>Mục lục</title>
     <style>
+      :root {
+        --bg: #f9f9f9;
+        --card: #ffffff;
+        --text: #222;
+        --muted: #666;
+        --border: #e2e2e2;
+        --link: #0066cc;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16181c;
+          --card: #1f2227;
+          --text: #e8e8e8;
+          --muted: #9a9a9a;
+          --border: #2e3238;
+          --link: #6aa9ff;
+        }
+      }
       body {
-        font-family: sans-serif;
-        padding: 20px;
-        background-color: #f9f9f9;
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 32px 16px;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
       }
-      h1, h2 {
-        color: #333;
+      main {
+        max-width: 720px;
+        margin: 0 auto;
       }
-      .info-box {
-        margin-top: 10px;
-        padding: 10px;
-        background: #eee;
-        border-radius: 5px;
-        word-break: break-word;
+      h1 {
+        margin: 0 0 4px;
       }
-      .links {
-        margin-top: 20px;
+      .sub {
+        margin: 0 0 32px;
+        color: var(--muted);
       }
-      .links a {
-        display: inline-block;
-        margin-right: 15px;
-        color: #0066cc;
+      h2 {
+        font-size: 1.1rem;
+        margin: 0 0 12px;
+      }
+      h2 small {
+        font-weight: normal;
+        color: var(--muted);
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      li a {
+        display: block;
+        margin-bottom: 10px;
+        padding: 14px 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: inherit;
         text-decoration: none;
       }
-      .links a:hover {
-        text-decoration: underline;
+      li a:hover {
+        border-color: var(--link);
+      }
+      .title {
+        display: block;
+        font-weight: 600;
+        color: var(--link);
+      }
+      .desc {
+        display: block;
+        margin-top: 2px;
+        font-size: 0.9rem;
+        color: var(--muted);
       }
     </style>
   </head>
   <body>
-    <h1>Your User Agent:</h1>
-    <div id="ua" class="info-box">Loading...</div>
+    <main>
+      <h1>Mục lục</h1>
+      <p class="sub">hongtuanquyen.github.io</p>
 
-    <h2>Your Cookies:</h2>
-    <div id="cookie" class="info-box">Loading...</div>
-
-    <div class="links">
-      <h2>Quick Links:</h2>
-      <a href="https://dev.paydar.com/auth/reset-password" target="_blank">Go to Dev</a>
-      <a href="https://stg.paydar.com/auth/reset-password" target="_blank">Go to Staging</a>
-      <a href="https://paydar.com/auth/reset-password" target="_blank">Go to Prod</a>
-    </div>
-
-    <script>
-      document.getElementById('ua').textContent = navigator.userAgent;
-      document.getElementById('cookie').textContent = document.cookie || 'No cookies set.';
-    </script>
+      <section>
+        <h2>sa/ <small>· Software Architecture</small></h2>
+        <ul>
+          <li>
+            <a href="sa/security-roadmap.html">
+              <span class="title">Security Roadmap</span>
+              <span class="desc">27 module · Beginner → Advanced · AppSec, Cloud, AI</span>
+            </a>
+          </li>
+          <li>
+            <a href="sa/certification-guide.html">
+              <span class="title">Lộ trình chứng chỉ bảo mật</span>
+              <span class="desc">24 chứng chỉ xếp từ dễ đến khó, kèm mức ưu tiên cho vai trò software architect</span>
+            </a>
+          </li>
+          <li>
+            <a href="sa/interview-mastery.html">
+              <span class="title">Interview Mastery</span>
+              <span class="desc">28 module · Architect / FDE · Chat, Security, AI</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
   </body>
 </html>

@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lộ trình chứng chỉ cho Software Architect</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fffdf8;--ink:#1f2328;--mute:#5d6470;--line:#e3dfd3;--accent:#2f6f5e;
+--done:#1f7a8c;--p1:#2a7f4f;--p2:#2f5fb3;--p3:#a8690f;--p4:#6b7280;--tint:#efece2;}
+@media (prefers-color-scheme:dark){:root{--bg:#14171a;--card:#1b1f23;--ink:#e8e6df;--mute:#9aa1ab;--line:#2c3238;--accent:#6fc2a8;
+--done:#5cc0d3;--p1:#5fcf8c;--p2:#7da7f0;--p3:#e0a64b;--p4:#9aa1ab;--tint:#20252a;}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px 80px}
+header.hero{padding:48px 0 24px;border-bottom:2px solid var(--accent);margin-bottom:28px}
+.hero .kicker{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.hero h1{font-size:clamp(26px,5vw,38px);line-height:1.2;margin:6px 0 10px}
+.hero p{color:var(--mute);margin:0;max-width:720px}
+h2{font-size:24px;margin:44px 0 6px}
+h2+.lead{color:var(--mute);margin:0 0 18px;max-width:760px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:22px 0 8px}
+.pick{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--p1);border-radius:10px;padding:14px 16px}
+.pick h3{margin:0 0 4px;font-size:17px} .pick p{margin:0;color:var(--mute);font-size:15px}
+.pick .tag{font-size:12px;font-weight:700;color:var(--p1);text-transform:uppercase;letter-spacing:.05em}
+.note{background:var(--tint);border:1px solid var(--line);border-radius:10px;padding:12px 16px;color:var(--mute);font-size:15px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:12px 0 0;font-size:14px;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+.badge.done,.num.done{color:var(--done)} .badge.p1,.num.p1{color:var(--p1)} .badge.p2,.num.p2{color:var(--p2)}
+.badge.p3,.num.p3{color:var(--p3)} .badge.p4,.num.p4{color:var(--p4)}
+.chartbox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto}
+.chart{display:block;min-width:600px;width:100%;height:auto}
+.chart .grid{stroke:var(--line);stroke-width:1} .chart .mid{stroke:var(--mute);stroke-width:1.2;stroke-dasharray:5 4;opacity:.7}
+.chart .q-top{fill:var(--p1);opacity:.07}
+.chart .tick{fill:var(--mute);font-size:12px} .chart .axis{fill:var(--mute);font-size:13px;font-weight:600}
+.chart .qlab{fill:var(--mute);font-size:11.5px;font-style:italic}
+.chart .pt circle{fill:var(--card);stroke:currentColor;stroke-width:2.2}
+.chart .pt text{fill:currentColor;font-size:11px;font-weight:700}
+.chart .pt.done{color:var(--done)} .chart .pt.p1{color:var(--p1)} .chart .pt.p2{color:var(--p2)}
+.chart .pt.p3{color:var(--p3)} .chart .pt.p4{color:var(--p4)}
+.chart a:hover circle,.chart a:focus circle{stroke-width:4} .chart a:focus{outline:none}
+.chartcap{font-size:14px;color:var(--mute);margin:8px 2px 0}
+ol.road{list-style:none;margin:0;padding:0;border-left:3px solid var(--line)}
+ol.road li{position:relative;display:grid;grid-template-columns:150px 1fr;gap:12px;padding:6px 0 18px 22px}
+ol.road li::before{content:"";position:absolute;left:-9px;top:10px;width:15px;height:15px;border-radius:50%;background:var(--accent);border:3px solid var(--bg)}
+ol.road .when{font-weight:700;color:var(--accent);font-size:14px}
+ol.road h4{margin:0 0 2px;font-size:17px} ol.road p{margin:0;color:var(--mute);font-size:15px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 18px}
+.chip{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){.chip[aria-pressed=true]{color:#0c1512}}
+.tools input{flex:1 1 200px;min-width:160px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px}
+.tally{font-size:14px;color:var(--mute)}
+.cert{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 14px;scroll-margin-top:16px}
+.cert:target{outline:3px solid var(--accent);outline-offset:2px}
+.cert[hidden]{display:none}
+.cert header{display:flex;gap:12px;align-items:center}
+.num{flex:none;width:34px;height:34px;border-radius:50%;border:2.2px solid currentColor;display:grid;place-items:center;font-weight:700;font-size:14px}
+.ttl{flex:1;min-width:0} .cert h3{margin:0;font-size:18px;line-height:1.3}
+.issuer{margin:0;color:var(--mute);font-size:14px}
+.meters{display:flex;flex-wrap:wrap;gap:6px 22px;margin:12px 0 8px;font-size:14px;color:var(--mute)}
+.meters b{color:var(--ink)}
+.dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}
+.dots i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--mute);display:inline-block}
+.dots i.on{background:var(--accent);border-color:var(--accent)}
+.why{margin:6px 0 10px} .cond{color:var(--mute);font-weight:400}
+dl{margin:0;display:grid;gap:8px}
+dl div{display:grid;grid-template-columns:150px 1fr;gap:10px;padding-top:8px;border-top:1px dashed var(--line)}
+dt{color:var(--mute);font-size:14px} dd{margin:0;font-size:15px}
+.st{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:14px;color:var(--mute)}
+.st select{font:inherit;font-size:14px;background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:5px 8px}
+.empty{display:none;padding:18px;text-align:center;color:var(--mute)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;font-size:15px}
+th{background:var(--tint);font-size:14px} td:first-child{font-weight:600;width:34%}
+.tw{overflow-x:auto}
+.src li{margin:4px 0} a{color:var(--accent)}
+footer{margin-top:48px;color:var(--mute);font-size:14px}
+@media (max-width:640px){
+  ol.road li{grid-template-columns:1fr;gap:2px}
+  dl div{grid-template-columns:1fr;gap:2px}
+  .cert header{flex-wrap:wrap} .badge{margin-left:46px}
+  td:first-child{width:auto}
+}
+@media print{.tools,.st,.chartbox{display:none} .cert{break-inside:avoid} body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div class="kicker">Hướng dẫn chứng chỉ · cập nhật 2/11/2026</div>
+  <h1>Chứng chỉ bảo mật cho một Software Architect</h1>
+  <p>24 chứng chỉ phổ biến và có uy tín, xếp từ dễ đến khó, kèm mức ưu tiên riêng cho vai trò software architect làm việc với khách ở Mỹ, châu Âu và Nhật Bản. Bạn đã có ISC2 CC.</p>
+</header>
+
+<section>
+  <h2>Kết luận nhanh</h2>
+  <p class="lead">Nếu chỉ chọn ba chứng chỉ để có tác động lớn nhất, đây là thứ tự mình đề xuất.</p>
+  <div class="summary">
+    <div class="pick"><span class="tag">1 · Tay nghề</span><h3>BSCP</h3><p>Bằng chứng bạn tự tìm và khai thác lỗi web được. Thi thực hành, open book, được giới AppSec công nhận.</p></div>
+    <div class="pick"><span class="tag">2 · Tín hiệu architect</span><h3>AWS Solutions Architect – Associate</h3><p>Chứng chỉ architect được nhận diện nhất. Chỉ cần nếu bạn chưa có chứng chỉ cloud và khách dùng AWS.</p></div>
+    <div class="pick"><span class="tag">3 · Quy trình</span><h3>CSSLP</h3><p>Gần nhất với hướng dev lên architect có tư duy bảo mật. Có thể thi trước rồi thành Associate nếu kinh nghiệm chưa đủ.</p></div>
+  </div>
+  <p class="note"><b>Cách đọc nhanh:</b> số trên biểu đồ và số trên thẻ là một. Chấm cao bên trái là dễ và hợp, nên làm sớm. Chấm cao bên phải là khó nhưng đáng kế hoạch dài hạn. Phần lớn chứng chỉ ở dưới là "chỉ khi bị yêu cầu".</p>
+</section>
+
+<section>
+  <h2>Bản đồ độ khó và mức hợp vai trò</h2>
+  <p class="lead">Màu và nhãn cùng thể hiện mức ưu tiên. Bấm vào một chấm để nhảy tới thẻ chi tiết.</p>
+  <div class="chartbox"><svg viewBox="0 0 640 440" role="img" aria-label="Biểu đồ độ khó theo mức hợp với vai trò architect" class="chart">
+<rect x="336.0" y="28" width="280.0" height="180.0" class="q q-top"/>
+<line x1="92.52173913043478" y1="28" x2="92.52173913043478" y2="388" class="grid"/>
+<text x="92.52173913043478" y="406" text-anchor="middle" class="tick">1</text>
+<line x1="214.2608695652174" y1="28" x2="214.2608695652174" y2="388" class="grid"/>
+<text x="214.2608695652174" y="406" text-anchor="middle" class="tick">2</text>
+<line x1="336.0" y1="28" x2="336.0" y2="388" class="grid"/>
+<text x="336.0" y="406" text-anchor="middle" class="tick">3</text>
+<line x1="457.73913043478257" y1="28" x2="457.73913043478257" y2="388" class="grid"/>
+<text x="457.73913043478257" y="406" text-anchor="middle" class="tick">4</text>
+<line x1="579.4782608695652" y1="28" x2="579.4782608695652" y2="388" class="grid"/>
+<text x="579.4782608695652" y="406" text-anchor="middle" class="tick">5</text>
+<line x1="56" y1="371.6363636363636" x2="616" y2="371.6363636363636" class="grid"/>
+<text x="46" y="375.6363636363636" text-anchor="end" class="tick">1</text>
+<line x1="56" y1="289.8181818181818" x2="616" y2="289.8181818181818" class="grid"/>
+<text x="46" y="293.8181818181818" text-anchor="end" class="tick">2</text>
+<line x1="56" y1="208.0" x2="616" y2="208.0" class="grid"/>
+<text x="46" y="212.0" text-anchor="end" class="tick">3</text>
+<line x1="56" y1="126.18181818181819" x2="616" y2="126.18181818181819" class="grid"/>
+<text x="46" y="130.1818181818182" text-anchor="end" class="tick">4</text>
+<line x1="56" y1="44.363636363636374" x2="616" y2="44.363636363636374" class="grid"/>
+<text x="46" y="48.363636363636374" text-anchor="end" class="tick">5</text>
+<line x1="336.0" y1="28" x2="336.0" y2="388" class="mid"/>
+<line x1="56" y1="208.0" x2="616" y2="208.0" class="mid"/>
+<text x="336.0" y="428" text-anchor="middle" class="axis">Độ khó (1 = nhập môn, 5 = chuyên gia) →</text>
+<text transform="translate(16 208.0) rotate(-90)" text-anchor="middle" class="axis">Mức hợp với software architect →</text>
+<text x="64" y="44" class="qlab">Dễ và hợp: làm sớm</text>
+<text x="608" y="44" text-anchor="end" class="qlab">Khó và hợp: kế hoạch dài hạn</text>
+<text x="64" y="380" class="qlab">Dễ nhưng ít hợp: khi bị yêu cầu</text>
+<text x="608" y="380" text-anchor="end" class="qlab">Khó và ít hợp: bỏ qua</text>
+<a href="#c1" class="pt done"><circle cx="92.5" cy="289.8" r="12"/><text x="92.5" y="293.8" text-anchor="middle">1</text><title>1. CC (Đã có)</title></a>
+<a href="#c2" class="pt p4"><circle cx="153.4" cy="289.8" r="12"/><text x="153.4" y="293.8" text-anchor="middle">2</text><title>2. Security+ (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c3" class="pt p4"><circle cx="214.3" cy="338.9" r="12"/><text x="214.3" y="342.9" text-anchor="middle">3</text><title>3. CCNA (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c4" class="pt p3"><circle cx="238.6" cy="208.0" r="12"/><text x="238.6" y="212.0" text-anchor="middle">4</text><title>4. CCSK (Tùy chọn)</title></a>
+<a href="#c5" class="pt p1"><circle cx="275.1" cy="85.3" r="12"/><text x="275.1" y="89.3" text-anchor="middle">5</text><title>5. AWS SAA (Ưu tiên cao)</title></a>
+<a href="#c6" class="pt p4"><circle cx="299.5" cy="355.3" r="12"/><text x="299.5" y="359.3" text-anchor="middle">6</text><title>6. CEH (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c7" class="pt p3"><circle cx="336.0" cy="208.0" r="12"/><text x="336.0" y="212.0" text-anchor="middle">7</text><title>7. TOGAF (Tùy chọn)</title></a>
+<a href="#c8" class="pt p4"><circle cx="336.0" cy="330.7" r="12"/><text x="336.0" y="334.7" text-anchor="middle">8</text><title>8. CySA+ (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c9" class="pt p4"><circle cx="360.3" cy="265.3" r="12"/><text x="360.3" y="269.3" text-anchor="middle">9</text><title>9. SSCP (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c10" class="pt p4"><circle cx="360.3" cy="306.2" r="12"/><text x="360.3" y="310.2" text-anchor="middle">10</text><title>10. PenTest+ (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c11" class="pt p2"><circle cx="372.5" cy="167.1" r="12"/><text x="372.5" y="171.1" text-anchor="middle">11</text><title>11. ISO 27001 LI/LA (Nên cân nhắc)</title></a>
+<a href="#c12" class="pt p3"><circle cx="384.7" cy="208.0" r="12"/><text x="384.7" y="212.0" text-anchor="middle">12</text><title>12. CIPT (Tùy chọn)</title></a>
+<a href="#c13" class="pt p1"><circle cx="409.0" cy="77.1" r="12"/><text x="409.0" y="81.1" text-anchor="middle">13</text><title>13. BSCP (Ưu tiên cao)</title></a>
+<a href="#c14" class="pt p4"><circle cx="409.0" cy="289.8" r="12"/><text x="409.0" y="293.8" text-anchor="middle">14</text><title>14. CISA (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c15" class="pt p3"><circle cx="421.2" cy="150.7" r="12"/><text x="421.2" y="154.7" text-anchor="middle">15</text><title>15. SABSA (Tùy chọn)</title></a>
+<a href="#c16" class="pt p2"><circle cx="433.4" cy="109.8" r="12"/><text x="433.4" y="113.8" text-anchor="middle">16</text><title>16. AWS Security (Nên cân nhắc)</title></a>
+<a href="#c17" class="pt p1"><circle cx="457.7" cy="85.3" r="12"/><text x="457.7" y="89.3" text-anchor="middle">17</text><title>17. CSSLP (Ưu tiên cao)</title></a>
+<a href="#c18" class="pt p2"><circle cx="457.7" cy="175.3" r="12"/><text x="457.7" y="179.3" text-anchor="middle">18</text><title>18. CCSP (Nên cân nhắc)</title></a>
+<a href="#c19" class="pt p4"><circle cx="457.7" cy="257.1" r="12"/><text x="457.7" y="261.1" text-anchor="middle">19</text><title>19. CISM (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c20" class="pt p3"><circle cx="482.1" cy="232.5" r="12"/><text x="482.1" y="236.5" text-anchor="middle">20</text><title>20. CKS (Tùy chọn)</title></a>
+<a href="#c21" class="pt p2"><circle cx="506.4" cy="126.2" r="12"/><text x="506.4" y="130.2" text-anchor="middle">21</text><title>21. CISSP (Nên cân nhắc)</title></a>
+<a href="#c22" class="pt p4"><circle cx="555.1" cy="298.0" r="12"/><text x="555.1" y="302.0" text-anchor="middle">22</text><title>22. OSCP (Chỉ khi bị yêu cầu)</title></a>
+<a href="#c23" class="pt p3"><circle cx="567.3" cy="142.5" r="12"/><text x="567.3" y="146.5" text-anchor="middle">23</text><title>23. ISSAP (Tùy chọn)</title></a>
+<a href="#c24" class="pt p3"><circle cx="567.3" cy="208.0" r="12"/><text x="567.3" y="212.0" text-anchor="middle">24</text><title>24. OSWE (Tùy chọn)</title></a>
+</svg></div>
+  <div class="legend" aria-label="Chú giải mức ưu tiên">
+    <span><i class="badge done">Đã có</i> 1</span>
+    <span><i class="badge p1">Ưu tiên cao</i> 3</span>
+    <span><i class="badge p2">Nên cân nhắc</i> 4</span>
+    <span><i class="badge p3">Tùy chọn</i> 7</span>
+    <span><i class="badge p4">Chỉ khi bị yêu cầu</i> 9</span>
+  </div>
+  <p class="chartcap">Điểm số trên biểu đồ là đánh giá của mình theo hồ sơ của bạn (dev 8 năm, hướng architect, khách đa vùng), không phải số liệu chính thức. Cùng một chứng chỉ có thể xếp khác với người khác.</p>
+</section>
+
+<section>
+  <h2>Lộ trình gợi ý cho bạn</h2>
+  <p class="lead">Nguyên tắc: tối đa một chứng chỉ lớn mỗi sáu tháng khi vẫn đi làm, và mỗi chứng chỉ phải đi kèm một sản phẩm cụ thể (bài viết, portfolio) để dùng khi gặp khách.</p>
+  <ol class="road">
+<li><span class="when">Từ nay đến 3/2027</span><div><h4>Chưa cần thêm chứng chỉ</h4><p>Hoàn thành giai đoạn 1 và 2 của tutorial bảo mật. Làm các lab mức Practitioner trên PortSwigger Web Security Academy cho đến khi không cần xem lời giải. Đây là điều kiện để thi BSCP.</p></div></li>
+<li><span class="when">Quý 2/2027</span><div><h4>BSCP</h4><p>Chuẩn bị giấy phép Burp Suite Professional còn hiệu lực lúc thi. Thi open book có giám sát. Viết một bài tổng kết các lỗi đã khai thác để dùng làm portfolio.</p></div></li>
+<li><span class="when">Quý 3/2027</span><div><h4>AWS Solutions Architect – Associate (hoặc tương đương Azure/GCP)</h4><p>Chỉ khi bạn chưa có chứng chỉ cloud và khách dùng nền tảng đó. Có thể bỏ qua nếu đã có kinh nghiệm cloud rộng và portfolio rõ ràng.</p></div></li>
+<li><span class="when">Cuối 2027 đến Quý 1/2028</span><div><h4>CSSLP</h4><p>Thi sau capstone. Nếu kinh nghiệm dev của bạn được ISC2 xác nhận đủ 4 năm trong các domain của đề cương thì nhận chứng chỉ đầy đủ; nếu chưa, bạn thành Associate of ISC2 và có 5 năm để đủ kinh nghiệm.</p></div></li>
+<li><span class="when">2028</span><div><h4>Chọn một: AWS Security – Specialty, CCSP hoặc ISO 27001 LI</h4><p>AWS Security nếu khách chủ yếu dùng AWS. CCSP nếu khách đa cloud và bạn đủ điều kiện hoặc chọn con đường Associate. ISO 27001 LI nếu khách EU, Nhật hay hỏi chứng nhận. Hỏi thẳng khách tiềm năng trước khi quyết định.</p></div></li>
+<li><span class="when">2029 trở đi</span><div><h4>CISSP, sau đó ISSAP nếu hướng security architect</h4><p>Khi kinh nghiệm bảo mật thực tế đủ theo yêu cầu ISC2. Xác nhận lại chính sách miễn trừ kinh nghiệm hiện hành.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Chi tiết từng chứng chỉ</h2>
+  <p class="lead">Xếp theo độ khó tăng dần. Thời gian ôn và chi phí là ước tính cho người đã có nền như bạn; $ là rẻ, $$$$ là đắt. Mọi điều kiện, giá và mã đề cần kiểm tra lại trên trang chính thức trước khi đăng ký.</p>
+  <div class="tools" role="group" aria-label="Bộ lọc">
+    <button class="chip" data-f="ALL" aria-pressed="true">Tất cả</button>
+    <button class="chip" data-f="P1" aria-pressed="false">Ưu tiên cao</button>
+    <button class="chip" data-f="P2" aria-pressed="false">Nên cân nhắc</button>
+    <button class="chip" data-f="P3" aria-pressed="false">Tùy chọn</button>
+    <button class="chip" data-f="P4" aria-pressed="false">Chỉ khi bị yêu cầu</button>
+    <input type="search" id="q" placeholder="Tìm theo tên, tổ chức, lĩnh vực" aria-label="Tìm chứng chỉ">
+  </div>
+  <p class="tally" id="tally" aria-live="polite"></p>
+
+<article class="cert" id="c1" data-prio="DONE" data-text="cc (certified in cybersecurity) isc2 nền tảng" data-key="CC">
+  <header>
+    <span class="num done">1</span>
+    <div class="ttl"><h3>CC (Certified in Cybersecurity)</h3><p class="issuer">ISC2 · Nền tảng</p></div>
+    <span class="badge done">Đã có</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 1.0 trên 5"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 2.0 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>Đã có</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Cho bạn từ vựng và bức tranh tổng thể. Không cần thêm gì từ chứng chỉ này ngoài việc duy trì.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Khái niệm nền của 5 domain: nguyên tắc bảo mật, BC/DR/IR, kiểm soát truy cập, mạng, vận hành.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không yêu cầu kinh nghiệm.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>Đã xong.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Ghi nhận giờ học (CPE) đều đặn để duy trì; xem quy định hiện hành trên trang ISC2.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CC">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c2" data-prio="P4" data-text="security+ comptia nền tảng" data-key="Security+">
+  <header>
+    <span class="num p4">2</span>
+    <div class="ttl"><h3>Security+</h3><p class="issuer">CompTIA · Nền tảng</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 1.5 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 2.0 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Trùng nhiều với CC nên hầu như không thêm tín hiệu cho vị trí architect. Giá trị chính là được nhận diện ở Mỹ, nhất là khối chính phủ.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Nền tảng bảo mật rộng: mối đe dọa, kiến trúc, vận hành, quản trị rủi ro.</dd></div>
+    <div><dt>Hình thức</dt><dd>Tối đa 90 câu trong 90 phút (trắc nghiệm và tình huống). Bản mới SY0-801 dự kiến ra khoảng 17/11/2026, bản SY0-701 ngừng thi ngày 11/6/2027 (theo thông tin CompTIA được trích lại).</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc kinh nghiệm.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>40–80 giờ (bạn đã có CC).</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi hợp đồng hoặc khách ghi rõ yêu cầu. Nếu thi, chọn đúng bản đề cương.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="Security+">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c3" data-prio="P4" data-text="ccna cisco mạng" data-key="CCNA">
+  <header>
+    <span class="num p4">3</span>
+    <div class="ttl"><h3>CCNA</h3><p class="issuer">Cisco · Mạng</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 2.0 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 1.4 trên 5"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Nền mạng tốt nhưng thiên về thiết bị Cisco. Công việc của bạn cần TCP/IP, DNS, TLS, VPC hơn là cấu hình router.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Mạng: switching, định tuyến, IP services, nền bảo mật mạng, automation.</dd></div>
+    <div><dt>Hình thức</dt><dd>Một bài thi (mã 200-301, kiểm tra bản hiện hành): trắc nghiệm và mô phỏng cấu hình.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>100–200 giờ (cần luyện subnetting và lab).</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi chuyển hướng hạ tầng hoặc network security.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CCNA">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c4" data-prio="P3" data-text="ccsk (certificate of cloud security knowledge) cloud security alliance cloud" data-key="CCSK">
+  <header>
+    <span class="num p3">4</span>
+    <div class="ttl"><h3>CCSK (Certificate of Cloud Security Knowledge)</h3><p class="issuer">Cloud Security Alliance · Cloud</p></div>
+    <span class="badge p3">Tùy chọn</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 2.2 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Rẻ, nhanh, có hệ thống. ISC2 cho phép CCSK thay 1 năm kinh nghiệm khi xét điều kiện CCSP.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Bảo mật cloud trung lập nhà cung cấp: trách nhiệm chung, IAM, dữ liệu, container, DevSecOps.</dd></div>
+    <div><dt>Hình thức</dt><dd>Thi trực tuyến, open book.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>30–60 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Muốn nền cloud security trung lập trước khi lấy CCSP hoặc chứng chỉ cloud của một nhà cung cấp.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CCSK">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c5" data-prio="P1" data-text="aws certified solutions architect – associate amazon web services kiến trúc" data-key="AWS SAA">
+  <header>
+    <span class="num p1">5</span>
+    <div class="ttl"><h3>AWS Certified Solutions Architect – Associate</h3><p class="issuer">Amazon Web Services · Kiến trúc</p></div>
+    <span class="badge p1">Ưu tiên cao</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 2.5 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 4.5 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(nếu bạn chưa có chứng chỉ cloud nào và khách dùng AWS)</span>:</b> Là chứng chỉ architect phổ biến nhất; khách và HR nhìn là hiểu. Là nền cho AWS Security – Specialty. Nếu khách dùng Azure hoặc GCP, chọn chứng chỉ architect tương đương của nền tảng đó.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Thiết kế hệ thống trên AWS: sẵn sàng, bảo mật, hiệu năng, chi phí.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm đơn và nhiều lựa chọn (mã SAA-C03, kiểm tra bản hiện hành).</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc; nên có kinh nghiệm AWS thực hành.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>60–120 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Sớm trong lộ trình, vì rẻ, nhanh, và tín hiệu rõ nhất cho vai trò software architect.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="AWS SAA">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c6" data-prio="P4" data-text="ceh (certified ethical hacker) ec-council offensive" data-key="CEH">
+  <header>
+    <span class="num p4">6</span>
+    <div class="ttl"><h3>CEH (Certified Ethical Hacker)</h3><p class="issuer">EC-Council · Offensive</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 2.7 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 1.2 trên 5"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Xuất hiện nhiều trong tin tuyển dụng và một số hợp đồng nhà nước, nhưng giới chuyên môn thường đánh giá thấp hơn BSCP hay OSCP vì ít thực hành.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Công cụ và kỹ thuật tấn công, thiên về lý thuyết.</dd></div>
+    <div><dt>Hình thức</dt><dd>Bài lý thuyết và CEH Practical là hai bài khác nhau.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Thường yêu cầu khóa học chính thức hoặc hồ sơ chứng minh kinh nghiệm (kiểm tra).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>80–150 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Chỉ khi bên thuê yêu cầu đích danh.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CEH">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c7" data-prio="P3" data-text="togaf the open group kiến trúc" data-key="TOGAF">
+  <header>
+    <span class="num p3">7</span>
+    <div class="ttl"><h3>TOGAF</h3><p class="issuer">The Open Group · Kiến trúc</p></div>
+    <span class="badge p3">Tùy chọn</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Phổ biến ở tập đoàn và công ty tư vấn, nhất là châu Âu. Giúp nói cùng ngôn ngữ với enterprise architect, nhưng không phải chứng chỉ bảo mật.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Phương pháp kiến trúc doanh nghiệp (ADM) và ngôn ngữ chung của enterprise architect.</dd></div>
+    <div><dt>Hình thức</dt><dd>Hai cấp (Foundation, Practitioner), trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>40–80 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi làm việc nhiều với khách doanh nghiệp lớn dùng khung kiến trúc doanh nghiệp.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="TOGAF">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c8" data-prio="P4" data-text="cysa+ comptia blue team" data-key="CySA+">
+  <header>
+    <span class="num p4">8</span>
+    <div class="ttl"><h3>CySA+</h3><p class="issuer">CompTIA · Blue team</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 1.5 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Thuộc hướng SOC, không phải vai trò của bạn. Phần cần thiết nằm trong module 4.4 và 5.2 của tutorial.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Phân tích log, phát hiện tấn công, ứng phó (hướng SOC).</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm và câu hỏi dựa trên hiệu năng.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>80–150 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Chỉ khi chuyển hướng SOC hoặc blue team.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CySA+">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c9" data-prio="P4" data-text="sscp isc2 vận hành" data-key="SSCP">
+  <header>
+    <span class="num p4">9</span>
+    <div class="ttl"><h3>SSCP</h3><p class="issuer">ISC2 · Vận hành</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.2 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 2.3 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Thiên về quản trị vận hành, ít sát công việc thiết kế của architect.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Kỹ thuật vận hành bảo mật: truy cập, rủi ro, ứng phó, mật mã, mạng, hệ thống.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Có yêu cầu kinh nghiệm ngắn hạn, hoặc thành Associate nếu chưa đủ (kiểm tra trên trang ISC2).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>80–150 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi làm vai trò quản trị hệ thống bảo mật.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="SSCP">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c10" data-prio="P4" data-text="pentest+ comptia offensive" data-key="PenTest+">
+  <header>
+    <span class="num p4">10</span>
+    <div class="ttl"><h3>PenTest+</h3><p class="issuer">CompTIA · Offensive</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.2 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 1.8 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Nếu cần bằng chứng tấn công thực tế cho web, BSCP thực hành sâu và đáng tin hơn nhiều.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Kiểm thử xâm nhập mức nhập môn đến trung cấp.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm và câu hỏi dựa trên hiệu năng.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>80–150 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Chỉ khi cần chứng chỉ pentest mức nhập môn theo yêu cầu.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="PenTest+">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c11" data-prio="P2" data-text="iso/iec 27001 lead implementer / lead auditor pecb, bsi và các đơn vị khác quản trị &amp; tuân thủ" data-key="ISO 27001 LI/LA">
+  <header>
+    <span class="num p2">11</span>
+    <div class="ttl"><h3>ISO/IEC 27001 Lead Implementer / Lead Auditor</h3><p class="issuer">PECB, BSI và các đơn vị khác · Quản trị &amp; tuân thủ</p></div>
+    <span class="badge p2">Nên cân nhắc</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.3 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.5 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(nếu khách ở EU, Nhật hoặc là doanh nghiệp cần chứng nhận ISO/SOC 2)</span>:</b> Khách EU, Nhật và doanh nghiệp lớn hay hỏi ISO 27001. Giúp bạn dịch yêu cầu tuân thủ thành yêu cầu kỹ thuật (module 3.3, 3.4).</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Triển khai (LI) hoặc đánh giá (LA) hệ thống quản lý an toàn thông tin theo ISO 27001.</dd></div>
+    <div><dt>Hình thức</dt><dd>Thường là khóa học của đơn vị cấp kèm bài thi.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc kinh nghiệm cho cấp cơ bản (kiểm tra theo đơn vị cấp).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>40–70 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi khách mục tiêu cần chứng nhận hoặc kiểm toán và hỏi bạn về điều đó.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="ISO 27001 LI/LA">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c12" data-prio="P3" data-text="cipt (certified information privacy technologist) iapp quyền riêng tư" data-key="CIPT">
+  <header>
+    <span class="num p3">12</span>
+    <div class="ttl"><h3>CIPT (Certified Information Privacy Technologist)</h3><p class="issuer">IAPP · Quyền riêng tư</p></div>
+    <span class="badge p3">Tùy chọn</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.4 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Hợp với architect xử lý nhiều dữ liệu cá nhân (như chat) và khách chịu GDPR.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Công nghệ bảo vệ quyền riêng tư: privacy by design, kiểm soát kỹ thuật.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>40–80 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi sản phẩm chủ yếu là dữ liệu cá nhân hoặc khách EU quan tâm đến quyền riêng tư.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CIPT">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c13" data-prio="P1" data-text="bscp (burp suite certified practitioner) portswigger appsec" data-key="BSCP">
+  <header>
+    <span class="num p1">13</span>
+    <div class="ttl"><h3>BSCP (Burp Suite Certified Practitioner)</h3><p class="issuer">PortSwigger · AppSec</p></div>
+    <span class="badge p1">Ưu tiên cao</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.6 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 4.6 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$ (chưa tính giấy phép Burp Pro)</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Là bằng chứng &#x27;làm được&#x27;, không phải &#x27;học thuộc&#x27;. Khớp trực tiếp với giai đoạn 2 của tutorial và tạo khác biệt với architect chỉ có chứng chỉ lý thuyết.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Khai thác lỗi web thực tế bằng Burp Suite; bằng chứng tay nghề AppSec.</dd></div>
+    <div><dt>Hình thức</dt><dd>Thi thực hành, open book, có giám sát tự động và kiểm tra giấy tờ; có thể phải nộp file dự án; thời lượng khoảng 4 giờ (xác nhận trên trang PortSwigger).</dd></div>
+    <div><dt>Điều kiện</dt><dd>Làm được các lab mức Practitioner trở xuống trên Web Security Academy mà không xem lời giải; cần giấy phép Burp Suite Professional còn hiệu lực lúc thi.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>100–200 giờ (phần lớn là lab).</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Sau khi hoàn thành giai đoạn 2 của tutorial; thi khi làm lab Practitioner trơn tru.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="BSCP">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c14" data-prio="P4" data-text="cisa isaca quản trị &amp; tuân thủ" data-key="CISA">
+  <header>
+    <span class="num p4">14</span>
+    <div class="ttl"><h3>CISA</h3><p class="issuer">ISACA · Quản trị &amp; tuân thủ</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.6 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 2.0 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Hướng kiểm toán, ít liên quan đến thiết kế hệ thống.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Kiểm toán và kiểm soát hệ thống thông tin.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Có yêu cầu kinh nghiệm kiểm toán, có miễn trừ (kiểm tra).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>100–180 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi chuyển sang tư vấn kiểm toán hoặc tuân thủ.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CISA">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c15" data-prio="P3" data-text="sabsa (scf / scp) sabsa institute kiến trúc bảo mật" data-key="SABSA">
+  <header>
+    <span class="num p3">15</span>
+    <div class="ttl"><h3>SABSA (SCF / SCP)</h3><p class="issuer">SABSA Institute · Kiến trúc bảo mật</p></div>
+    <span class="badge p3">Tùy chọn</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.7 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.7 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Đúng chủ đề &#x27;security architect&#x27; và gắn với nghiệp vụ, nhưng ít phổ biến hơn CISSP nên khách ít nhận diện.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Khung kiến trúc bảo mật gắn với rủi ro và mục tiêu kinh doanh.</dd></div>
+    <div><dt>Hình thức</dt><dd>Nhiều cấp (Foundation, Practitioner, Master), cấp cao hơn có bài viết và đánh giá.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Tùy cấp (kiểm tra).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>60–120 giờ cho cấp đầu.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi muốn một khung kiến trúc bảo mật bài bản hoặc khách ở môi trường doanh nghiệp lớn dùng SABSA.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="SABSA">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c16" data-prio="P2" data-text="aws certified security – specialty amazon web services cloud" data-key="AWS Security">
+  <header>
+    <span class="num p2">16</span>
+    <div class="ttl"><h3>AWS Certified Security – Specialty</h3><p class="issuer">Amazon Web Services · Cloud</p></div>
+    <span class="badge p2">Nên cân nhắc</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 3.8 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 4.2 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(nếu khách chủ yếu dùng AWS)</span>:</b> Khớp module 4.2. Rất được khách AWS nhận diện và chứng minh bạn bảo mật được hệ thống thật, không chỉ lý thuyết.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Bảo mật AWS: danh tính, mạng, dữ liệu, ghi log, phản ứng sự cố, quản trị.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm (mã hiện hành là SCS-C03; kiểm tra thời điểm chuyển từ SCS-C02).</dd></div>
+    <div><dt>Điều kiện</dt><dd>AWS khuyến nghị kinh nghiệm bảo mật và AWS thực tế.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>100–180 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Sau SAA hoặc khi có kinh nghiệm AWS đủ sâu, nếu khách của bạn dùng AWS.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="AWS Security">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c17" data-prio="P1" data-text="csslp (certified secure software lifecycle professional) isc2 appsec" data-key="CSSLP">
+  <header>
+    <span class="num p1">17</span>
+    <div class="ttl"><h3>CSSLP (Certified Secure Software Lifecycle Professional)</h3><p class="issuer">ISC2 · AppSec</p></div>
+    <span class="badge p1">Ưu tiên cao</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 4.5 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(trung hạn (cuối 2027 đến 2028))</span>:</b> Chứng chỉ gần nhất với &#x27;developer lên architect có tư duy bảo mật&#x27;. Ngôn ngữ của nó là quy trình và vòng đời, bổ sung cho BSCP (kỹ năng) bằng phần hiểu biết hệ thống.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Bảo mật xuyên suốt vòng đời phần mềm: yêu cầu, thiết kế, triển khai, kiểm thử, vận hành, chuỗi cung ứng.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>4 năm kinh nghiệm toàn thời gian tích lũy trong một hay nhiều domain của đề cương; bằng cấp liên quan được tính tối đa 1 năm. Nếu chưa đủ, thi đỗ để thành Associate of ISC2 và có 5 năm để đủ kinh nghiệm.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>120–200 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Sau BSCP và capstone. Kinh nghiệm dev của bạn có thể đủ, nhưng ISC2 xét theo domain nên cần đối chiếu trước.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CSSLP">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c18" data-prio="P2" data-text="ccsp (certified cloud security professional) isc2 cloud" data-key="CCSP">
+  <header>
+    <span class="num p2">18</span>
+    <div class="ttl"><h3>CCSP (Certified Cloud Security Professional)</h3><p class="issuer">ISC2 · Cloud</p></div>
+    <span class="badge p2">Nên cân nhắc</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.4 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(nếu khách đa cloud hoặc muốn chứng chỉ cloud trung lập nhà cung cấp)</span>:</b> Trung lập nhà cung cấp, hợp với architect đa cloud. Điều kiện 3 năm bảo mật thực tế có thể là rào cản với bạn lúc này.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Kiến trúc, thiết kế, vận hành và quản trị bảo mật cloud.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>5 năm kinh nghiệm IT, trong đó 3 năm bảo mật thông tin và 1 năm trong một domain của đề cương; bằng cấp liên quan tính tối đa 1 năm; CCSK thay được 1 năm; CISSP còn hiệu lực thay toàn bộ yêu cầu. Nếu chưa đủ có thể thành Associate và có 6 năm để đủ kinh nghiệm.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>120–200 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Sau khi có thêm kinh nghiệm bảo mật thực tế, hoặc chọn con đường Associate.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CCSP">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c19" data-prio="P4" data-text="cism isaca quản trị &amp; tuân thủ" data-key="CISM">
+  <header>
+    <span class="num p4">19</span>
+    <div class="ttl"><h3>CISM</h3><p class="issuer">ISACA · Quản trị &amp; tuân thủ</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 2.4 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(trừ khi bạn chuyển hướng quản lý bảo mật)</span>:</b> Thiên về quản lý, không về thiết kế kỹ thuật.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Quản trị, quản lý rủi ro và chương trình an toàn thông tin.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Có yêu cầu kinh nghiệm quản lý bảo mật (kiểm tra).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>120–200 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi định hướng lên vai trò quản lý bảo mật như CISO.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CISM">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c20" data-prio="P3" data-text="cks (certified kubernetes security specialist) cncf / linux foundation cloud" data-key="CKS">
+  <header>
+    <span class="num p3">20</span>
+    <div class="ttl"><h3>CKS (Certified Kubernetes Security Specialist)</h3><p class="issuer">CNCF / Linux Foundation · Cloud</p></div>
+    <span class="badge p3">Tùy chọn</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.2 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 2.7 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(nếu khách chạy Kubernetes)</span>:</b> Rất tốt nếu hạ tầng khách là Kubernetes; nếu không thì dư thừa.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Bảo mật Kubernetes: hardening, chuỗi cung ứng, giám sát và runtime.</dd></div>
+    <div><dt>Hình thức</dt><dd>Thi thực hành trên dòng lệnh.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Cần CKA còn hiệu lực (kiểm tra).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>100–160 giờ (kèm CKA).</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi dự án hoặc khách chạy Kubernetes ở quy mô lớn.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CKS">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c21" data-prio="P2" data-text="cissp isc2 quản trị &amp; kiến trúc" data-key="CISSP">
+  <header>
+    <span class="num p2">21</span>
+    <div class="ttl"><h3>CISSP</h3><p class="issuer">ISC2 · Quản trị &amp; kiến trúc</p></div>
+    <span class="badge p2">Nên cân nhắc</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.4 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 4.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(dài hạn (2029 trở đi))</span>:</b> Là chứng chỉ bảo mật được nhận diện rộng nhất, khách và HR đều biết. Phù hợp khi muốn lên vai trò kiến trúc hoặc quản lý bảo mật cấp cao.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Bảo mật rộng 8 domain, thiên quản lý và kiến trúc.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm thích nghi (computer adaptive).</dd></div>
+    <div><dt>Điều kiện</dt><dd>Khoảng 5 năm kinh nghiệm tích lũy trong từ 2 domain trở lên, có miễn trừ tối đa 1 năm; chính sách miễn trừ vừa được ISC2 cập nhật năm 2026, hãy xác nhận trên trang chính thức. Có thể thi trước để thành Associate.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>150–300 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Khi kinh nghiệm bảo mật thực tế đủ; không cần vội trong 2027.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="CISSP">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c22" data-prio="P4" data-text="oscp / oscp+ offsec offensive" data-key="OSCP">
+  <header>
+    <span class="num p4">22</span>
+    <div class="ttl"><h3>OSCP / OSCP+</h3><p class="issuer">OffSec · Offensive</p></div>
+    <span class="badge p4">Chỉ khi bị yêu cầu</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.8 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 1.9 trên 5"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect:</b> Rất được tôn trọng ở hướng offensive nhưng rất tốn thời gian và không cần cho vai trò architect.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Pentest thực chiến; thi thực hành 24 giờ kèm báo cáo.</dd></div>
+    <div><dt>Hình thức</dt><dd>Thi thực hành; OSCP+ có hiệu lực giới hạn năm (kiểm tra).</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc, nhưng cần nền Linux, mạng, lập trình vững.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>250–500 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Chỉ khi muốn chuyển hẳn sang pentest hoặc red team.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="OSCP">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c23" data-prio="P3" data-text="cissp-issap (information systems security architecture professional) isc2 kiến trúc bảo mật" data-key="ISSAP">
+  <header>
+    <span class="num p3">23</span>
+    <div class="ttl"><h3>CISSP-ISSAP (Information Systems Security Architecture Professional)</h3><p class="issuer">ISC2 · Kiến trúc bảo mật</p></div>
+    <span class="badge p3">Tùy chọn</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.9 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.8 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(dài hạn)</span>:</b> Là mục tiêu dài hạn đúng chủ đề &#x27;security architect&#x27; nếu bạn lấy CISSP.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Chuyên sâu kiến trúc bảo mật, nằm trên nền CISSP.</dd></div>
+    <div><dt>Hình thức</dt><dd>Trắc nghiệm.</dd></div>
+    <div><dt>Điều kiện</dt><dd>Cần CISSP còn hiệu lực và kinh nghiệm kiến trúc (kiểm tra).</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>150–250 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Sau CISSP, khi vai trò đã nghiêng hẳn sang kiến trúc bảo mật.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="ISSAP">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+
+<article class="cert" id="c24" data-prio="P3" data-text="oswe (web expert) offsec appsec" data-key="OSWE">
+  <header>
+    <span class="num p3">24</span>
+    <div class="ttl"><h3>OSWE (Web Expert)</h3><p class="issuer">OffSec · AppSec</p></div>
+    <span class="badge p3">Tùy chọn</span>
+  </header>
+  <div class="meters">
+    <span>Độ khó <span class="dots" role="img" aria-label="Độ khó: 4.9 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+    <span>Hợp vai trò <span class="dots" role="img" aria-label="Mức hợp với architect: 3.0 trên 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></span>
+    <span class="cost">Chi phí tương đối <b>$$$$</b></span>
+  </div>
+  <p class="why"><b>Với software architect <span class="cond">(sau BSCP, nếu muốn chuyên sâu review mã)</span>:</b> Sâu hơn BSCP và hợp với dev biết đọc mã. Chỉ đáng nếu bạn muốn trở thành chuyên gia review mã bảo mật.</p>
+  <dl>
+    <div><dt>Kiểm tra gì</dt><dd>Khai thác web theo hướng đọc mã nguồn (white box); thi thực hành rất dài.</dd></div>
+    <div><dt>Hình thức</dt><dd>Thi thực hành (khoảng 48 giờ, kiểm tra).</dd></div>
+    <div><dt>Điều kiện</dt><dd>Không bắt buộc, nhưng cần nền lập trình và web vững.</dd></div>
+    <div><dt>Thời gian ôn (ước tính)</dt><dd>200–400 giờ.</dd></div>
+    <div><dt>Khi nào nên lấy</dt><dd>Sau BSCP, nếu AppSec trở thành chuyên môn chính.</dd></div>
+  </dl>
+  <label class="st">Trạng thái của bạn
+    <select data-key="OSWE">
+      <option value="">Chưa quan tâm</option>
+      <option value="plan">Có kế hoạch</option>
+      <option value="study">Đang học</option>
+      <option value="done">Đã có</option>
+    </select>
+  </label>
+</article>
+  <p class="empty" id="empty">Không có chứng chỉ nào khớp bộ lọc.</p>
+</section>
+
+<section>
+  <h2>Chọn theo tình huống</h2>
+  <p class="lead">Khi khách đòi hỏi điều gì đó cụ thể, lộ trình trên thay đổi theo bảng này.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Tình huống</th><th>Nên cân nhắc</th></tr></thead>
+    <tbody>
+<tr><td>Khách chủ yếu dùng AWS</td><td>AWS SAA, rồi AWS Security – Specialty. CCSK là nền rẻ nếu cần.</td></tr>
+<tr><td>Khách dùng Azure hoặc GCP</td><td>Chứng chỉ architect của nền tảng đó trước; CCSP sau nếu muốn trung lập nhà cung cấp.</td></tr>
+<tr><td>Khách EU, cần tuân thủ GDPR hoặc ISO 27001</td><td>ISO 27001 Lead Implementer, CIPT; CSSLP cho phần quy trình.</td></tr>
+<tr><td>Khách Nhật Bản</td><td>Hỏi trực tiếp họ trước. Doanh nghiệp Nhật thường coi trọng quy trình nội bộ và ISO 27001 hơn một chứng chỉ cá nhân cụ thể.</td></tr>
+<tr><td>Khách Mỹ, hợp đồng nhà nước</td><td>Có thể phải có Security+ hoặc CISSP theo yêu cầu hợp đồng; kiểm tra điều khoản.</td></tr>
+<tr><td>Muốn chứng minh tay nghề thay vì kiến thức</td><td>BSCP, sau đó OSWE nếu muốn đi sâu review mã.</td></tr>
+<tr><td>Muốn lên quản lý bảo mật dài hạn</td><td>CISSP, rồi CISM.</td></tr>
+<tr><td>Chuyển hẳn sang SOC</td><td>CySA+ hoặc các chứng chỉ GIAC về phát hiện và ứng phó; khi đó lộ trình khác với bản này.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Lưu ý khi dùng tài liệu này</h2>
+  <p class="note">Điều kiện dự thi, chính sách miễn trừ, mã đề, giá và độ phổ biến thay đổi theo thời gian. Các điều kiện CSSLP, CCSP và yêu cầu của BSCP được đối chiếu với trang chính thức vào ngày 2/11/2026; phần CISSP, CISM, CISA, OSCP, OSWE, CKS, SABSA, ISSAP và thời gian ôn chỉ là thông tin tổng quát, cần xác nhận lại. Thông tin về Security+ trích từ một bài của bên thứ ba, nên hãy xác nhận trên trang CompTIA. Mình cố ý không ghi giá cụ thể. Nếu một khách hay nhà tuyển dụng cụ thể yêu cầu chứng chỉ nào đó, hãy ưu tiên yêu cầu của họ.</p>
+  <h3>Nguồn tham khảo</h3>
+  <ul class="src">
+<li><a href="https://www.isc2.org/Certifications/CSSLP/experience-requirements" rel="noopener">ISC2: điều kiện kinh nghiệm CSSLP</a></li>
+<li><a href="https://www.isc2.org/Certifications/CCSP/CCSP-Experience-Requirements" rel="noopener">ISC2: điều kiện kinh nghiệm CCSP</a></li>
+<li><a href="https://www.isc2.org/Certifications/CISSP/experience-requirements" rel="noopener">ISC2: điều kiện kinh nghiệm CISSP (chưa đối chiếu được nội dung, cần xác nhận)</a></li>
+<li><a href="https://portswigger.net/web-security/certification/frequently-asked-questions" rel="noopener">PortSwigger: BSCP, câu hỏi thường gặp</a></li>
+<li><a href="https://docs.aws.amazon.com/aws-certification/latest/examguides/security-specialty-03.html" rel="noopener">AWS: trang hướng dẫn kỳ thi Security – Specialty (SCS-C03)</a></li>
+<li><a href="https://www.certcrush.app/blog/security-plus-sy0-801-vs-sy0-701-whats-changing-2026" rel="noopener">CertCrush (bên thứ ba): Security+ SY0-801 và SY0-701</a></li>
+  </ul>
+</section>
+<footer>Tài liệu đi kèm tutorial Security Roadmap (module 6.4).</footer>
+</div>
+
+<script>
+(function(){
+  var cards=[].slice.call(document.querySelectorAll('.cert'));
+  var chips=[].slice.call(document.querySelectorAll('.chip'));
+  var q=document.getElementById('q'), tally=document.getElementById('tally'), empty=document.getElementById('empty');
+  var f='ALL', KEY='certguide:status';
+  var status={};
+  try{ status=JSON.parse(localStorage.getItem(KEY)||'{}')||{}; }catch(e){ status={}; }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(status)); }catch(e){} }
+  var names={plan:'Có kế hoạch',study:'Đang học',done:'Đã có'};
+  function apply(){
+    var t=(q.value||'').trim().toLowerCase(), shown=0;
+    cards.forEach(function(c){
+      var ok=(f==='ALL'||c.dataset.prio===f)&&(!t||c.dataset.text.indexOf(t)>-1);
+      c.hidden=!ok; if(ok) shown++;
+    });
+    empty.style.display=shown?'none':'block';
+    var n={plan:0,study:0,done:0};
+    Object.keys(status).forEach(function(k){ if(n[status[k]]!==undefined) n[status[k]]++; });
+    tally.textContent='Hiển thị '+shown+' / '+cards.length+' chứng chỉ. Bạn đã đánh dấu: '+n.done+' đã có, '+n.study+' đang học, '+n.plan+' có kế hoạch.';
+  }
+  chips.forEach(function(b){ b.addEventListener('click',function(){
+    f=b.dataset.f; chips.forEach(function(x){ x.setAttribute('aria-pressed',x===b?'true':'false'); }); apply();
+  }); });
+  q.addEventListener('input',apply);
+  [].slice.call(document.querySelectorAll('.st select')).forEach(function(s){
+    var k=s.dataset.key; if(status[k]) s.value=status[k];
+    s.addEventListener('change',function(){ if(s.value) status[k]=s.value; else delete status[k]; save(); apply(); });
+  });
+  // CC được đánh dấu đã có theo mặc định nếu chưa chọn
+  var cc=document.querySelector('.st select[data-key="CC"]');
+  if(cc && !status['CC']){ cc.value='done'; status['CC']='done'; }
+  // nếu mở bằng liên kết tới thẻ đang bị lọc thì bỏ lọc
+  window.addEventListener('hashchange',function(){
+    var t=document.getElementById(location.hash.slice(1));
+    if(t && t.hidden){ f='ALL'; q.value=''; chips.forEach(function(x){ x.setAttribute('aria-pressed',x.dataset.f==='ALL'?'true':'false'); }); apply(); t.scrollIntoView(); }
+  });
+  apply();
+})();
+</script>
+</body>
+</html>
