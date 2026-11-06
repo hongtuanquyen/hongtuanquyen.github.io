@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giải thích · Security</title>
+<style>
+:root{
+  --bg:#0a0e14; --panel:#0f141b; --side:#070a0f; --ink:#cfd8e3; --muted:#7a8797; --line:#1e2a38;
+  --accent:#39ff88; --accent-ink:#04130a; --accent-soft:rgba(57,255,136,.10);
+  --cyan:#5ccfe6; --amber:#ffb454; --red:#ff5f6d;
+  --code:#0b1017;
+  --glow:0 0 12px rgba(57,255,136,.35);
+  --radius:8px;
+  --mono:ui-monospace,"JetBrains Mono","Fira Code","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f3f7f4; --panel:#ffffff; --side:#e8efe9; --ink:#14201a; --muted:#5b6b62; --line:#cfdbd2;
+  --accent:#0a7a45; --accent-ink:#ffffff; --accent-soft:rgba(10,122,69,.10);
+  --cyan:#0b6e8a; --amber:#9a5b00; --red:#b3261e;
+  --code:#eaf1ec; --glow:none; color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 var(--sans);
+  background-image:
+    linear-gradient(rgba(57,255,136,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(57,255,136,.035) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+:root[data-theme="light"] body{background-image:none}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:100;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.07) 3px);
+  opacity:.5;
+}
+:root[data-theme="light"] body::after{display:none}
+::selection{background:var(--accent);color:var(--accent-ink)}
+a{color:var(--cyan)}
+
+.wrap{max-width:860px;margin:0 auto;padding:28px 20px 80px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.top .t{font:700 14px var(--mono);color:var(--accent);text-shadow:var(--glow)}
+.btn{all:unset;cursor:pointer;padding:7px 11px;border:1px solid var(--line);border-radius:6px;font:12px var(--mono);background:var(--panel);color:var(--ink)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+
+h1{font:700 30px/1.25 var(--mono);margin:6px 0 6px;color:var(--accent);text-shadow:var(--glow)}
+.lead{color:var(--muted);font:13px var(--mono);margin:0 0 24px}
+
+.exp{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:10px;margin:16px 0;padding:0}
+.exp>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;font:700 18px var(--mono);color:var(--ink)}
+.exp>summary::-webkit-details-marker{display:none}
+.exp>summary .qn{font:700 13px var(--mono);color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);border-radius:6px;padding:2px 9px}
+.exp>summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}
+.exp:not([open])>summary::after{transform:rotate(-90deg)}
+.exp>summary:hover{background:var(--accent-soft)}
+.exp .body{padding:2px 18px 18px}
+.exp .body>p{font-size:16px;margin:10px 0}
+
+code{background:var(--code);color:var(--accent);padding:1px 6px;border-radius:4px;border:1px solid var(--line);font:0.88em var(--mono)}
+pre{background:var(--code);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--radius);padding:14px 16px;overflow:auto;margin:14px 0;font-size:14px;line-height:1.55}
+pre code{background:none;border:0;padding:0;color:var(--ink);white-space:pre-wrap;word-break:break-word}
+
+.blk{margin:12px 0;padding:12px 14px;border-radius:8px;background:var(--code);border:1px solid var(--line)}
+.blk h6{font:700 11.5px var(--mono);text-transform:uppercase;letter-spacing:.6px;margin:0 0 8px;color:var(--cyan)}
+.blk.warn{border-left:3px solid var(--amber)}.blk.warn h6{color:var(--amber)}
+.blk p{margin:6px 0}
+.blk ul{margin:6px 0;padding-left:22px}
+.blk ul li{margin:6px 0}
+
+ol.flow{counter-reset:s;list-style:none;padding-left:0;margin:10px 0}
+ol.flow li{counter-increment:s;position:relative;padding-left:38px;margin:10px 0}
+ol.flow li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);font:700 13px/24px var(--mono);text-align:center}
+
+.tbl-wrap{overflow:auto;margin:12px 0}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:420px}
+table.tbl th,table.tbl td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+table.tbl th{background:var(--code);font:700 11px var(--mono);text-transform:uppercase;letter-spacing:.5px;color:var(--cyan);white-space:nowrap}
+table.tbl td code{word-break:break-word}
+.blk.ok{border-left:3px solid var(--accent)}.blk.ok h6{color:var(--accent)}
+pre.mermaid{background:#fff;border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:14px;text-align:center;overflow:auto}
+pre.mermaid:not([data-processed="true"]){height:0;padding:0;margin:0;border:0;visibility:hidden}
+pre.mermaid svg{max-width:100%;height:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">
+  <span class="t">~/sa/exp · giải thích</span>
+  <button class="btn" id="theme" type="button">◐ theme</button>
+</div>
+
+<h1>Giải thích</h1>
+<p class="lead">Những câu hỏi nền tảng về bảo mật, trả lời ngắn gọn. Bấm tiêu đề để mở.</p>
+
+<details class="exp" id="exp-jwt" open>
+<summary><span class="qn">01</span><span>JWT là gì?</span></summary>
+<div class="body">
+<p>JWT là token gồm 3 phần <code>header.payload.signature</code> do server cấp sau khi đăng nhập, chứa danh tính và quyền của bạn. Nó <b>stateless</b>: server không lưu session, mỗi request chỉ cần kiểm tra token.</p>
+
+<div class="blk"><h6>Sample</h6>
+<p>Đã tính thật bằng HS256, secret demo <code>my-demo-secret-change-me</code>.</p>
+<pre><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzEyMyIsInJvbGUiOiJ1c2VyIiwiaXNzIjoiYXBpLmV4YW1wbGUuY29tIiwiaWF0IjoxNzkzMDAwMDAwLCJleHAiOjE3OTMwMDA5MDB9.OGYBCZASdB8sCVpOYiWaSXclMCjsDF3vuR2f6fR1Fmg</code></pre>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Phần</th><th>Giải mã ra</th><th>Vai trò</th></tr></thead>
+<tbody>
+<tr><td>Header</td><td><code>{"alg":"HS256","typ":"JWT"}</code></td><td>Thuật toán ký</td></tr>
+<tr><td>Payload</td><td><code>{"sub":"user_123","role":"user","iss":"api.example.com","iat":1793000000,"exp":1793000900}</code></td><td>Dữ liệu (claims)</td></tr>
+<tr><td>Signature</td><td><code>OGYBC...Fmg</code></td><td>Chống sửa và giả mạo</td></tr>
+</tbody>
+</table></div></div>
+
+<div class="blk"><h6>Payload = claim chuẩn + claim tùy chỉnh</h6>
+<ul>
+<li><b>Claim chuẩn:</b> <code>iss</code>, <code>sub</code>, <code>aud</code>, <code>exp</code>, <code>nbf</code>, <code>iat</code>, <code>jti</code>. Chuẩn không bắt buộc field nào, nhưng thực tế nên có <code>exp</code>, <code>sub</code>, <code>iss</code>, <code>aud</code>.</li>
+<li><b>Claim tùy chỉnh:</b> do bạn đặt, như <code>role</code>, <code>tenant_id</code>.</li>
+<li>Payload chỉ <b>mã hóa Base64URL, ai cũng đọc được</b>, nên không để dữ liệu nhạy cảm.</li>
+</ul></div>
+
+<div class="blk"><h6>Signature</h6>
+<p><code>signature = HMAC-SHA256(header.payload, secret)</code>. Cùng nội dung và cùng secret thì ra cùng chữ ký, sửa một ký tự là lệch.</p></div>
+
+<div class="blk"><h6>Ai làm gì</h6>
+<ul>
+<li><b>Server (cấp token):</b> ký bằng secret.</li>
+<li><b>Client:</b> chỉ lưu token an toàn (Keychain/Keystore) và gửi kèm <code>Authorization: Bearer &lt;token&gt;</code>. Không verify, không có secret.</li>
+<li><b>Server (nhận request):</b> verify mỗi lần.</li>
+</ul></div>
+
+<div class="blk"><h6>Cách server verify</h6>
+<ol class="flow">
+<li>Tách token thành 3 phần.</li>
+<li>Tính lại <code>HMAC-SHA256(header.payload, secret)</code> bằng <b>thuật toán đã cấu hình sẵn</b>, không tin <code>alg</code> trong token (chặn <code>alg: none</code> và đổi kiểu thuật toán).</li>
+<li>So với signature trong token, nên so theo thời gian không đổi (<code>crypto.timingSafeEqual</code>).</li>
+<li>Khớp thì kiểm tiếp <code>exp</code>, <code>iss</code>, <code>aud</code>, rồi mới tin payload. Lệch hoặc hết hạn thì trả 401.</li>
+</ol>
+<pre><code>const claims = jwt.verify(token, SECRET, {
+  algorithms: ['HS256'],
+  issuer: 'api.example.com',
+});</code></pre></div>
+
+<div class="blk warn"><h6>Giới hạn cần nhớ</h6>
+<ul>
+<li>Không giữ bí mật nội dung (muốn thế dùng JWE).</li>
+<li>Ai cầm token hợp lệ vẫn dùng được tới khi hết hạn, nên <code>exp</code> ngắn (khoảng 15 phút) kèm refresh token.</li>
+<li>Khó thu hồi giữa chừng, và <code>role</code> trong token cũ không đổi cho tới khi token hết hạn.</li>
+</ul></div>
+</div>
+</details>
+
+<details class="exp" id="exp-https" open>
+<summary><span class="qn">02</span><span>HTTPS</span></summary>
+<div class="body">
+
+<div class="blk"><h6>Luồng cấp &amp; kiểm chứng chỉ (sequence)</h6>
+<p>Diagram cần Internet để tải thư viện Mermaid.</p>
+<pre class="mermaid">---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: Arial
+    fontSize: "15px"
+    primaryColor: "#EEF2FF"
+    primaryBorderColor: "#4F46E5"
+    primaryTextColor: "#1E293B"
+    lineColor: "#475569"
+    actorBkg: "#EEF2FF"
+    actorBorder: "#4F46E5"
+    actorTextColor: "#1E293B"
+    actorLineColor: "#94A3B8"
+    signalColor: "#334155"
+    signalTextColor: "#1E293B"
+    noteBkgColor: "#FFFBEB"
+    noteBorderColor: "#F59E0B"
+    noteTextColor: "#1E293B"
+    sequenceNumberColor: "#FFFFFF"
+  sequence:
+    actorMargin: 70
+    messageMargin: 30
+    noteMargin: 14
+    boxMargin: 12
+    width: 190
+    mirrorActors: false
+    actorFontFamily: Arial
+    noteFontFamily: Arial
+    messageFontFamily: Arial
+    actorFontSize: 15
+    noteFontSize: 14
+    messageFontSize: 14
+---
+sequenceDiagram
+    autonumber
+    participant S as Server&lt;br/&gt;api.example.com
+    participant CA as CA&lt;br/&gt;Demo CA
+    participant C as Client&lt;br/&gt;(app / trình duyệt)
+
+    Note over C: Có sẵn khóa công khai của CA&lt;br/&gt;CA_pub = 5D2E (nằm trong máy)
+
+    rect rgb(227, 240, 255)
+    Note over S,CA: GIAI ĐOẠN 1: CẤP CHỨNG CHỈ (làm 1 lần)
+    Note over S: Tạo cặp khóa&lt;br/&gt;S_priv = giữ kín&lt;br/&gt;S_pub = 7F3A
+    S-&gt;&gt;CA: Yêu cầu cấp (CSR)&lt;br/&gt;tên miền: api.example.com&lt;br/&gt;khóa công khai: 7F3A
+    CA-&gt;&gt;S: Thử thách: đặt file tok123&lt;br/&gt;tại /.well-known/acme-challenge/
+    S--&gt;&gt;CA: Đã đặt, CA tải về thấy đúng tok123
+    Note over CA: Xác nhận Server làm chủ tên miền
+    Note over CA: Lập nội dung chứng chỉ&lt;br/&gt;Serial = 04A1&lt;br/&gt;Subject = api.example.com&lt;br/&gt;Hạn: 01/11/2026 đến 30/01/2027&lt;br/&gt;Khóa công khai = 7F3A
+    Note over CA: Băm nội dung (SHA-256)&lt;br/&gt;H = ABC123
+    Note over CA: Ký H bằng khóa bí mật CA_priv&lt;br/&gt;Chữ ký = X9K2
+    CA-&gt;&gt;S: Chứng chỉ = nội dung + chữ ký X9K2
+    end
+
+    rect rgb(226, 245, 230)
+    Note over C,S: GIAI ĐOẠN 2: KẾT NỐI (mỗi lần truy cập)
+    C-&gt;&gt;S: Tôi muốn nói chuyện với api.example.com
+    S-&gt;&gt;C: Gửi chứng chỉ (nội dung + chữ ký X9K2)
+    Note over C: Kiểm tra 1, chữ ký&lt;br/&gt;Băm lại nội dung: H1 = ABC123&lt;br/&gt;Kiểm X9K2 bằng CA_pub: H2 = ABC123&lt;br/&gt;H1 = H2, nội dung nguyên vẹn, đúng CA ký
+    Note over C: Kiểm tra 2, tên miền&lt;br/&gt;api.example.com có trong chứng chỉ: khớp
+    Note over C: Kiểm tra 3, hạn dùng&lt;br/&gt;Hôm nay 05/11/2026 nằm trong khoảng: còn hạn
+    Note over C: Kiểm tra 4, thu hồi (nếu client có kiểm)&lt;br/&gt;Serial 04A1 không nằm trong danh sách hủy
+    C-&gt;&gt;S: Hãy chứng minh bạn giữ khóa bí mật của 7F3A
+    S-&gt;&gt;C: Ký dữ liệu bắt tay bằng S_priv
+    Note over C: Kiểm chữ ký đó bằng S_pub = 7F3A: đúng
+    Note over C,S: Tin tưởng xong, hai bên thỏa thuận khóa phiên và bắt đầu mã hóa
+    C-&gt;&gt;S: Dữ liệu đã mã hóa
+    end</pre>
+</div>
+
+<div class="blk"><h6>cert = payload + signature</h6>
+<p><b>Payload của cert</b> (phần TBSCertificate, &quot;to be signed&quot;):</p>
+<ul>
+<li><b>Subject:</b> tên miền, ví dụ <code>api.example.com</code> (kèm SAN).</li>
+<li><b>Public key</b> của server.</li>
+<li><b>Issuer:</b> CA nào cấp.</li>
+<li><b>Validity:</b> ngày bắt đầu và hết hạn.</li>
+<li><b>Serial number:</b> số hiệu, dùng khi thu hồi.</li>
+<li><b>Các extension:</b> mục đích dùng, đường dẫn kiểm tra thu hồi…</li>
+</ul>
+<p><b>Signature:</b></p>
+<pre><code>signature = Ký( CA_private_key , SHA-256(payload) )</code></pre>
+</div>
+
+<div class="blk ok"><h6>HTTPS chống được gì</h6>
+<ul>
+<li><b>Nghe lén:</b> dữ liệu trên đường truyền được mã hóa, wifi công cộng hay nhà mạng không đọc được.</li>
+<li><b>Sửa dữ liệu giữa đường:</b> có kiểm tra toàn vẹn, bị sửa là bị phát hiện.</li>
+<li><b>Giả mạo server (MITM thông thường):</b> kẻ gian không có cert hợp lệ cho tên miền đó nên client từ chối.</li>
+<li><b>Replay ở tầng giao thức:</b> TLS có số thứ tự bản ghi và khóa phiên mới mỗi lần, nên chép gói tin cũ phát lại sẽ bị bỏ.</li>
+</ul>
+</div>
+
+<div class="blk warn"><h6>HTTPS không chống được gì</h6>
+<ul>
+<li><b>Lỗi ở chính server hoặc app:</b> SQL injection, XSS, BOLA vẫn đi qua HTTPS bình thường vì request độc hại cũng được mã hóa gọn gàng.</li>
+<li><b>Replay ở tầng ứng dụng:</b> nếu kẻ gian lấy được một request hợp lệ rồi tự gửi lại (ví dụ lệnh chuyển tiền), HTTPS không cản được. Cần nonce, thời hạn ngắn, idempotency key.</li>
+<li><b>Máy bị nhiễm mã độc, hoặc người dùng bị lừa:</b> trang phishing <code>paypa1.com</code> cũng xin được cert hợp lệ. Ổ khóa chỉ chứng minh &quot;đúng tên miền này&quot;, không chứng minh &quot;tên miền này đáng tin&quot;.</li>
+<li><b>CA bị xâm nhập hoặc bị cài root CA lạ:</b> như trường hợp Avast cài root CA vào máy, phần mềm đó nhìn được nội dung HTTPS (liên quan ý &quot;cert CA bị làm giả&quot; ở phần TLS).</li>
+<li><b>Che việc bạn truy cập trang nào:</b> tên miền thường vẫn lộ qua DNS và SNI.</li>
+<li><b>Bảo vệ dữ liệu lúc lưu:</b> chỉ bảo vệ trên đường đi; tới server rồi thì dữ liệu nằm trong DB ra sao không liên quan.</li>
+<li><b>Thu hồi cert tức thì:</b> cert bị lộ khóa bí mật vẫn dùng được cho tới khi client biết nó bị thu hồi (CRL/OCSP), và nhiều client như Node mặc định không kiểm.</li>
+</ul>
+</div>
+
+</div>
+</details>
+
+<details class="exp" id="exp-hash" open>
+<summary><span class="qn">03</span><span>Băm password: SHA-256 vs Argon2id</span></summary>
+<div class="body">
+
+<p><b>Mục tiêu khi băm password:</b> DB bị lộ thì kẻ gian <b>không đoán ngược ra</b> được password gốc, hoặc rất tốn kém để đoán.</p>
+
+<div class="blk warn"><h6>SHA-256 — băm nhanh, không dành cho password</h6>
+<ul>
+<li>Thiết kế để <b>nhanh</b>: một GPU tính được hàng tỷ hash mỗi giây.</li>
+<li>Kẻ gian có hash bị lộ thì thử dần hàng tỷ password phổ biến (brute force, từ điển) trong thời gian ngắn.</li>
+<li>Thêm salt chỉ giúp một phần (xem bên dưới), không làm nó chậm đi.</li>
+</ul>
+</div>
+
+<div class="blk ok"><h6>Argon2id — băm chậm, dành cho password</h6>
+<ul>
+<li>Cố tình <b>chậm và tốn RAM</b>, bạn chỉnh được: thời gian (<code>t</code>), bộ nhớ (<code>m</code>), số luồng (<code>p</code>).</li>
+<li>Tốn RAM nên GPU và ASIC khó chạy song song, mỗi lần thử của kẻ gian đắt hơn nhiều.</li>
+<li>Là lựa chọn khuyến nghị hiện nay (OWASP). Nếu không dùng được thì bcrypt hoặc scrypt.</li>
+<li><b>Tự sinh và tự lưu salt</b> vào chuỗi kết quả, bạn không phải quản lý riêng.</li>
+</ul>
+</div>
+
+<div class="blk"><h6>Salt là gì, giải quyết gì</h6>
+<ul>
+<li>Salt (Gia vị được thêm vào, mỗi user 1 vị khác nhau)là chuỗi <b>ngẫu nhiên, riêng cho từng user</b>, trộn vào password trước khi băm.</li>
+<li>Hai user cùng password <code>123456</code> vẫn ra hai hash khác nhau, nên kẻ gian không dùng được bảng hash tính sẵn (rainbow table) và không biết ai trùng password với ai.</li>
+<li>Salt <b>không cần giữ bí mật</b>, lưu cạnh hash trong DB.</li>
+<li>Salt <b>không làm việc đoán chậm đi</b>. Chỉ phần &quot;chậm và tốn RAM&quot; của Argon2id mới làm được việc đó.</li>
+</ul>
+</div>
+
+<div class="blk"><h6>So sánh</h6>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th></th><th>SHA-256 + salt</th><th>Argon2id</th></tr></thead>
+<tbody>
+<tr><td>Tốc độ</td><td>Rất nhanh</td><td>Cố tình chậm, chỉnh được</td></tr>
+<tr><td>Kháng GPU</td><td>Kém</td><td>Tốt (tốn RAM)</td></tr>
+<tr><td>Salt</td><td>Tự quản lý</td><td>Tự sinh và lưu sẵn</td></tr>
+<tr><td>Dùng cho password</td><td>Không nên</td><td>Nên</td></tr>
+</tbody>
+</table></div>
+</div>
+
+<div class="blk"><h6>Sample (Node.js)</h6>
+<pre><code>const argon2 = require('argon2');
+
+// Đăng ký: băm rồi lưu chuỗi kết quả vào DB
+const hash = await argon2.hash(password, {
+  type: argon2.argon2id,
+  memoryCost: 19456,   // 19 MiB
+  timeCost: 2,
+  parallelism: 1,
+});
+// hash dạng: $argon2id$v=19$m=19456,t=2,p=1$&lt;salt&gt;$&lt;hash&gt;
+
+// Đăng nhập: verify (tự đọc salt và tham số trong chuỗi)
+const ok = await argon2.verify(hash, passwordNhapVao);</code></pre>
+</div>
+
+<div class="blk ok"><h6>Một dòng để nhớ</h6>
+<p>SHA-256 nhanh nên dễ bị đoán hàng loạt, còn Argon2id chậm và tốn RAM nên mỗi lần đoán đều đắt. Salt chỉ giúp mỗi user có hash riêng, còn độ chậm mới là thứ cản brute force.</p>
+</div>
+
+</div>
+</details>
+
+</div>
+<script>
+(function(){
+  var r=document.documentElement, b=document.getElementById('theme');
+  b.addEventListener('click',function(){
+    r.setAttribute('data-theme', r.getAttribute('data-theme')==='light'?'dark':'light');
+  });
+})();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad:false, securityLevel:'loose' });
+async function run(scope){
+  var nodes=[].slice.call(scope.querySelectorAll('pre.mermaid')).filter(function(n){return !n.dataset.processed && n.offsetParent!==null;});
+  if(nodes.length){ try{ await mermaid.run({ nodes: nodes }); }catch(e){ nodes.forEach(function(n){ n.dataset.processed='true'; n.style.whiteSpace='pre'; n.style.textAlign='left'; }); console.error(e); } }
+}
+window.addEventListener('load',function(){ run(document); });
+document.querySelectorAll('details.exp').forEach(function(d){ d.addEventListener('toggle',function(){ if(d.open) run(d); }); });
+</script>
+</body>
+</html>
