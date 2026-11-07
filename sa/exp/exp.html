@@ -129,6 +129,8 @@ details.nest .cn{font:700 10.5px var(--mono);color:var(--accent);background:var(
 <li><a href="#exp-xss">XSS</a></li>
 <li><a href="#exp-csrf">CSRF</a></li>
 <li><a href="#exp-bola">BOLA / IDOR</a></li>
+<li><a href="#exp-mobile-storage">Lưu trữ tin nhắn trong local storage ở mobile</a></li>
+<li><a href="#exp-logging">Logging and detection</a></li>
 </ol>
 </nav>
 
@@ -493,6 +495,98 @@ if (!rows.length) return res.sendStatus(404);</code></pre></div>
 GET /api/orders/9999   -&gt; 404   (không có đơn này)</code></pre><p>Kẻ gian không đọc được nội dung, nhưng biết được <b>ID nào tồn tại</b>, quy mô hệ thống, và đối tượng nào đáng nhắm tới. Với dữ liệu như email hay tài khoản, chỉ riêng việc xác nhận "có tài khoản này" đã giúp phishing hoặc đoán mật khẩu. Đây là lỗi <b>lộ thông tin qua phản hồi (enumeration)</b>.</p><p>Trả <b>404 cho cả hai trường hợp</b> thì phản hồi giống hệt nhau, kẻ gian không phân biệt được "không có" với "có nhưng không phải của bạn". Câu truy vấn đã ràng buộc <code>AND user_id = ?</code> ở trên làm điều này tự nhiên: cả hai trường hợp đều ra rỗng.</p></div>
 <div class="blk warn"><h6>Lưu ý</h6><ul><li><b>Phản hồi phải giống nhau cả về nội dung và thời gian xử lý</b>, nếu một nhánh nhanh hơn hẳn thì kẻ gian vẫn phân biệt được.</li><li><b>403 vẫn đúng</b> khi ID là thông tin công khai (ví dụ <code>/products/5</code>) hoặc người dùng đã biết đối tượng tồn tại và chỉ bị hạn chế một hành động. Quy tắc 404 áp dụng khi <b>sự tồn tại của đối tượng cũng là thông tin nhạy cảm</b>.</li><li><b>UUID</b> chỉ làm khó đoán ID, không thay việc kiểm tra quyền.</li><li>Áp dụng cho <b>mọi thao tác</b>, không chỉ đọc: sửa, xóa, tải file, endpoint con như <code>/orders/1002/invoice</code>.</li><li>Biến thể <b>BFLA</b> (Function Level): user thường gọi được endpoint của admin như <code>DELETE /api/users/5</code>.</li><li>Mẹo cùng ý tưởng: màn hình đăng nhập báo chung "sai email hoặc mật khẩu", không báo riêng "email không tồn tại".</li></ul></div>
 <div class="blk ok"><h6>Một dòng để nhớ</h6><p>Mỗi lần truy cập một đối tượng, server phải tự hỏi "người này có quyền với đúng đối tượng này không", và khi trả lời "không" thì không để lộ đối tượng đó có tồn tại hay không.</p></div>
+</div>
+</details>
+
+<details class="exp" id="exp-mobile-storage">
+<summary><span class="qn">07</span><span>Lưu trữ tin nhắn trong local storage ở mobile</span></summary>
+<div class="body">
+
+<h3 style="font:700 16px var(--mono);color:var(--cyan);margin:6px 0 4px">Tại sao phải lưu tin nhắn trong DB cục bộ?</h3>
+<p>Thật ra <b>không bắt buộc</b>. Không dùng DB cục bộ, fetch API khi hiển thị là hợp lệ, chỉ đánh đổi là mất một số tính năng. Người ta lưu cục bộ vì:</p>
+<div class="blk"><div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Lý do</th><th>Giải thích</th></tr></thead>
+<tbody>
+<tr><td>Đọc khi offline</td><td>Mất mạng vẫn xem được lịch sử chat</td></tr>
+<tr><td>Mở app nhanh</td><td>Hiện ngay từ DB, không chờ mạng rồi mới có dữ liệu</td></tr>
+<tr><td>Tiết kiệm băng thông và pin</td><td>Chỉ tải tin mới (đồng bộ tăng dần), không tải lại cả hội thoại</td></tr>
+<tr><td>Tìm kiếm trong tin nhắn</td><td>Tìm cục bộ nhanh và không gửi từ khóa lên server</td></tr>
+<tr><td>App mã hóa đầu cuối (kiểu Signal/WhatsApp)</td><td>Server không giữ lâu nội dung, nên thiết bị là nơi duy nhất còn lưu</td></tr>
+</tbody>
+</table></div></div>
+
+<div class="blk warn"><h6>Cái giá</h6>
+<p>Dữ liệu nằm trên máy, nên mất máy, root/jailbreak hoặc bản sao lưu iCloud/Google đều có thể làm lộ. Nếu có lưu thì phải:</p>
+<ul>
+<li>Mã hóa DB (SQLCipher), khóa lưu trong Keychain/Keystore, gắn với mở khóa sinh trắc/PIN.</li>
+<li>Loại khỏi backup (<code>isExcludedFromBackup</code> trên iOS, <code>allowBackup=false</code> trên Android).</li>
+<li>Xóa sạch khi đăng xuất.</li>
+</ul></div>
+
+<div class="blk ok"><h6>Cách chọn</h6>
+<ul>
+<li><b>Không cần offline và không cần tìm kiếm cục bộ:</b> không lưu đĩa, chỉ giữ trong RAM khi đang xem (đơn giản nhất, ít rủi ro nhất).</li>
+<li><b>Cần offline:</b> lưu có giới hạn (ví dụ 200 tin gần nhất mỗi hội thoại), mã hóa và xóa khi đăng xuất.</li>
+</ul></div>
+
+<h3 style="font:700 16px var(--mono);color:var(--cyan);margin:22px 0 4px">Tại sao không nên để DB nằm trong backup?</h3>
+<p>Vì <b>bản sao lưu là một đường khác để dữ liệu rời khỏi máy</b>, và ở đó các lớp bảo vệ bạn đã làm trên máy không còn nguyên vẹn.</p>
+
+<div class="blk"><h6>Chuyện gì xảy ra khi không loại khỏi backup</h6>
+<ul>
+<li><b>iOS:</b> dữ liệu app (gồm file SQLite) được chép vào iCloud Backup, hoặc vào bản sao lưu local khi cắm máy tính (Finder/iTunes).</li>
+<li><b>Android:</b> Auto Backup đẩy dữ liệu app lên Google Drive của tài khoản, hoặc chép qua <code>adb backup</code> trên một số phiên bản.</li>
+</ul></div>
+
+<div class="blk warn"><h6>Các rủi ro</h6>
+<ol>
+<li><b>Qua mặt khóa app.</b> Trên máy, người dùng phải mở khóa sinh trắc hoặc PIN mới vào được tin nhắn. Bản backup là một file nằm ngoài app, đọc được mà không qua bước đó.</li>
+<li><b>Bản sao nằm ở nơi kém bảo vệ hơn.</b> Kẻ gian chiếm được tài khoản iCloud/Google, hoặc ngồi vào máy tính có bản sao lưu local (nhất là khi không đặt mật khẩu cho bản sao đó), sẽ lấy được dữ liệu <b>mà không cần cầm điện thoại</b>. Mức bảo vệ còn phụ thuộc cấu hình, ví dụ iCloud mặc định Apple còn giữ khóa mã hóa trừ khi bật Advanced Data Protection.</li>
+<li><b>Khóa mã hóa không đi cùng bản sao.</b> Nếu mã hóa DB bằng SQLCipher và để khóa trong Keychain/Keystore (loại "chỉ trên thiết bị này"), khóa <b>không được sao lưu</b>. Khi khôi phục sang máy mới, DB về nhưng không có khóa để mở, nên app lỗi hoặc phải xóa đi. Loại DB khỏi backup từ đầu thì tránh được tình huống này.</li>
+<li><b>Tin đã xóa sống lại.</b> Bạn xóa sạch dữ liệu khi đăng xuất, nhưng bản backup cũ vẫn giữ các tin đó. Khôi phục máy là chúng quay lại, trái với chính sách lưu trữ.</li>
+</ol></div>
+
+<div class="blk"><h6>Ví dụ</h6>
+<p>Alice mất điện thoại. Kẻ gian không biết PIN máy nên không vào được app. Nhưng Alice dùng cùng mật khẩu cho Apple ID ở một dịch vụ đã bị lộ, kẻ gian đăng nhập iCloud, khôi phục bản sao lưu lên máy khác và đọc hết lịch sử chat. Nếu DB đã bị loại khỏi backup thì bản sao đó không có gì để đọc.</p></div>
+
+<div class="blk ok"><h6>Cách làm</h6>
+<pre><code>// iOS (Swift): đánh dấu file không sao lưu
+var values = URLResourceValues()
+values.isExcludedFromBackup = true
+try url.setResourceValues(values)</code></pre>
+<pre><code>&lt;!-- Android: AndroidManifest.xml --&gt;
+&lt;application android:allowBackup="false" ... /&gt;</code></pre>
+<p>Android 12 trở lên nên dùng thêm <code>dataExtractionRules</code>/<code>fullBackupContent</code> để loại riêng thư mục chứa DB nếu vẫn muốn backup các dữ liệu khác của app.</p></div>
+
+<div class="blk warn"><h6>Đánh đổi</h6>
+<p>Người dùng đổi máy sẽ <b>không có lại lịch sử chat từ backup</b>. Với app chat, xử lý bằng cách để server là nguồn gốc (tải lại sau khi đăng nhập) hoặc cung cấp tính năng chuyển dữ liệu riêng có mã hóa.</p></div>
+
+</div>
+</details>
+
+<details class="exp" id="exp-logging">
+<summary><span class="qn">08</span><span>Logging and detection</span></summary>
+<div class="body">
+
+<div class="blk"><h6>Một dòng log tốt</h6>
+<p>Mỗi dòng log phải trả lời được: <b>ai, làm gì, với cái gì, lúc nào, từ đâu, kết quả</b>.</p>
+<pre><code>{"ts":"...","event":"authz_denied","userId":"u_4821","ip":"203.0.113.50","resourceId":"c_9913"}</code></pre></div>
+
+<div class="blk"><h6>Phát hiện brute force đăng nhập và dò BOLA</h6>
+<p>Một lần thấy bước chân lạ trước cửa không nói lên gì. Hai mươi lần trong hai phút, mỗi lần thử một ổ khóa khác nhau thì khác. Cảnh báo tốt luôn có hai phần: <b>cái gì</b> và <b>bao nhiêu lần trong bao lâu</b>.</p>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Tấn công</th><th>Dấu hiệu</th><th>Ngưỡng cảnh báo</th></tr></thead>
+<tbody>
+<tr><td>BOLA</td><td><code>03:12:01 u_4821</code> bị từ chối <code>c_9913</code>, <code>03:12:02</code> bị từ chối <code>c_9914</code>, ...</td><td>Hơn 10 <code>resourceId</code> khác nhau bị từ chối trong 5 phút → "đang dò ID"</td></tr>
+<tr><td>Brute force</td><td>Đăng nhập sai liên tục trên một tài khoản</td><td>≥ 5 lần sai trong 10 phút</td></tr>
+<tr><td>Credential stuffing</td><td>Một IP thử nhiều tài khoản</td><td>≥ 20 tài khoản khác nhau</td></tr>
+</tbody>
+</table></div>
+<p><b>Tín hiệu nghiêm trọng nhất:</b> thất bại nhiều lần rồi thành công.</p></div>
+
+<div class="blk warn"><h6>Chất lượng của log</h6>
+<p>Đừng tạo log không cần thiết. Log quá nhiều dẫn tới dev không đọc vì toàn báo động giả (như câu chuyện cậu bé chăn cừu).</p></div>
+
 </div>
 </details>
 
