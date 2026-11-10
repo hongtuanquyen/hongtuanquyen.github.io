@@ -1038,6 +1038,112 @@ docker run -d --name juice -p 127.0.0.1:3000:3000 bkimminich/juice-shop
 <li><strong>Một editor</strong> có plugin Semgrep hoặc ESLint</li>
 </ul>
 <p>Bài kiểm tra: cấu hình trình duyệt đi qua Burp (cổng 8080), đăng nhập Juice Shop, xem request trong tab HTTP history.</p>
+<details class="dg-sample" id="tool-guideline">
+<summary>🧰 Guideline dùng công cụ cho lab bảo mật (bấm để mở)</summary>
+<div class="dg-smp">
+<p>Áp dụng cho máy Mac và Juice Shop chạy trên máy bạn. Chỉ dùng trên hệ thống của chính bạn hoặc hệ thống được phép kiểm thử.</p>
+
+<p><strong>1. Nền tảng</strong></p>
+<div class="tw"><table>
+<thead><tr><th>Công cụ</th><th>Dùng để</th><th>Kiểm tra cài đặt</th></tr></thead>
+<tbody>
+<tr><td>Docker Desktop</td><td>Chạy Juice Shop</td><td><code>docker -v</code></td></tr>
+<tr><td>Node.js <strong>22 trở lên</strong> (LTS)</td><td>Chạy ESLint 10, project Node</td><td><code>node -v</code></td></tr>
+<tr><td>Git</td><td>Quản lý code, dùng cho Semgrep</td><td><code>git --version</code></td></tr>
+<tr><td>VS Code</td><td>Editor, có extension</td><td></td></tr>
+<tr><td>Burp Suite Community</td><td>Proxy chặn và sửa request</td><td>Mở được app</td></tr>
+<tr><td>Wireshark</td><td>Bắt gói tin</td><td>Mở được app</td></tr>
+</tbody>
+</table></div>
+<p>Cấu hình Git một lần:</p>
+<pre><code class="language-bash">git config --global user.name "Tên của bạn"
+git config --global user.email "email@example.com"
+</code></pre>
+
+<p><strong>2. Juice Shop (mục tiêu thực hành)</strong></p>
+<pre><code class="language-bash">docker run -d --name juice -p 127.0.0.1:3000:3000 bkimminich/juice-shop
+</code></pre>
+<ul>
+<li>Mở <code>http://localhost:3000</code>.</li>
+<li>Cờ <code>127.0.0.1:</code> để app chỉ nghe trên máy bạn, không lộ ra LAN.</li>
+<li>Dừng và chạy lại: <code>docker stop juice</code>, <code>docker start juice</code>.</li>
+</ul>
+
+<p><strong>3. Burp Suite (proxy)</strong></p>
+<p>Cách nhanh nhất là dùng trình duyệt có sẵn của Burp:</p>
+<ol>
+<li>Tab <strong>Proxy → Intercept</strong>: đảm bảo <strong>Intercept is off</strong>. Nếu bật, trang sẽ treo chờ bạn Forward.</li>
+<li>Bấm <strong>Open browser</strong>. Burp chạy ở <code>127.0.0.1:8080</code>.</li>
+<li>Vào <code>http://localhost:3000</code>, đăng ký và đăng nhập.</li>
+<li>Xem <strong>Proxy → HTTP history</strong>, tìm <code>POST /rest/user/login</code>. Response có chuỗi JWT.</li>
+<li>Dán JWT vào tab <strong>Decoder</strong> (Base64) để đọc header và payload.</li>
+</ol>
+<p>Dùng Firefox riêng thay vì trình duyệt của Burp: đặt proxy thủ công là <code>127.0.0.1:8080</code>, xóa <code>localhost, 127.0.0.1</code> khỏi <strong>No proxy for</strong>, và dùng <strong>profile riêng</strong>.</p>
+<p><strong>Đừng</strong> để CA của Burp trong trình duyệt dùng hằng ngày. Burp đọc được HTTPS của mọi trang trong trình duyệt đó.</p>
+
+<p><strong>4. Wireshark (bắt gói)</strong></p>
+<ul>
+<li>Chọn card loopback: <code>lo0</code> trên macOS.</li>
+<li>Bộ lọc: <code>tcp.port == 3000</code>.</li>
+<li>Mở Juice Shop, sẽ thấy các gói HTTP. Loopback là HTTP thường nên đọc được nội dung.</li>
+</ul>
+
+<p><strong>5. Semgrep (quét mẫu code)</strong></p>
+<p>Đã cài CLI và đã có token đăng nhập (<code>semgrep login</code> báo token đã tồn tại).</p>
+<pre><code class="language-bash">semgrep scan --config p/javascript --metrics=off test.js
+</code></pre>
+<ul>
+<li><code>--metrics=off</code> tắt gửi số liệu.</li>
+<li>Luật tự viết chạy bằng <code>--config ten-file.yml</code>.</li>
+<li>Extension VS Code là tùy chọn, chỉ để hiện gạch chân khi gõ. Nó dùng CLI bên dưới.</li>
+</ul>
+<p><strong>Kết quả đã kiểm tra:</strong> <code>p/javascript</code> chạy 309 luật trên <code>test.js</code> (chứa <code>exec('ls ' + process.argv[2])</code>) và <strong>không báo gì</strong>. Một luật Pro bị bỏ qua vì engine miễn phí không hỗ trợ. Chưa xác nhận được Semgrep có bắt mẫu này hay không. Bước tiếp theo là chạy luật tự viết <code>exec-concat.yml</code> (đã mô tả trước đó) để xem.</p>
+
+<p><strong>6. ESLint với eslint-plugin-security</strong></p>
+<p>Thiết lập một lần trong <code>lab-security</code>:</p>
+<pre><code class="language-bash">npm init -y
+npm i -D eslint eslint-plugin-security
+</code></pre>
+<p><code>eslint.config.js</code>:</p>
+<pre><code class="language-js">const security = require('eslint-plugin-security');
+
+module.exports = [
+  {
+    files: ['**/*.js'],
+    plugins: { security },
+    rules: { ...security.configs.recommended.rules },
+  },
+];
+</code></pre>
+<p>Chạy:</p>
+<pre><code class="language-bash">npx eslint test.js
+</code></pre>
+<ul>
+<li>Lỗi <code>util.styleText is not a function</code> nghĩa là Node cũ hơn 22. Nâng Node lên LTS, hoặc cài <code>eslint@9</code>.</li>
+<li>Không có cảnh báo không có nghĩa là an toàn. Plugin chỉ bắt mẫu có sẵn.</li>
+</ul>
+
+<p><strong>7. Semgrep hay ESLint security?</strong></p>
+<div class="tw"><table>
+<thead><tr><th></th><th>Semgrep</th><th>ESLint + security</th></tr></thead>
+<tbody>
+<tr><td>Ngôn ngữ</td><td>Nhiều</td><td>JS/TS</td></tr>
+<tr><td>Viết luật riêng</td><td>Dễ, theo mẫu code</td><td>Phải biết API ESLint</td></tr>
+<tr><td>Hiện khi gõ</td><td>Có (extension)</td><td>Có</td></tr>
+<tr><td>Lỗi chất lượng code, React Hooks</td><td>Không phải thế mạnh</td><td>Có</td></tr>
+</tbody>
+</table></div>
+<p>Khuyến nghị: dùng cả hai. Semgrep cho bảo mật và luật tự viết, ESLint cho chất lượng code và React Native. Kết quả so sánh thật sẽ quyết định nên giữ phần nào.</p>
+
+<p><strong>8. Quy tắc an toàn chung</strong></p>
+<ul>
+<li>Chỉ quét, bắt gói và chặn request trên hệ thống của mình.</li>
+<li>Đọc lệnh trước khi chạy, nhất là <code>rm</code>, <code>chmod -R</code>, <code>sudo</code>, và <code>curl ... | sh</code>.</li>
+<li>Không đưa secret thật vào file test.</li>
+<li>Dùng profile trình duyệt riêng cho lab, gỡ CA của Burp sau khi xong.</li>
+</ul>
+</div>
+</details>
 <p><strong>Bước 3. Tạo repo <code>security-lab</code>.</strong> Cấu trúc gợi ý:</p>
 <pre><code class="language-text">security-lab/
   README.md          # mục lục + ghi chú cách chạy lab
