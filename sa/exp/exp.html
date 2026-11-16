@@ -131,6 +131,10 @@ details.nest .cn{font:700 10.5px var(--mono);color:var(--accent);background:var(
 <li><a href="#exp-bola">BOLA / IDOR</a></li>
 <li><a href="#exp-mobile-storage">Lưu trữ tin nhắn trong local storage ở mobile</a></li>
 <li><a href="#exp-logging">Logging and detection</a></li>
+<li><a href="#exp-hsts">HSTS · ép trình duyệt dùng HTTPS</a></li>
+<li><a href="#exp-samesite">SameSite · Strict và Lax khác nhau về UX</a></li>
+<li><a href="#exp-ws">WebSocket · kiểm tra Origin (CSWSH)</a></li>
+<li><a href="#exp-origin">Origin và Referer</a></li>
 </ol>
 </nav>
 
@@ -587,6 +591,64 @@ try url.setResourceValues(values)</code></pre>
 <div class="blk warn"><h6>Chất lượng của log</h6>
 <p>Đừng tạo log không cần thiết. Log quá nhiều dẫn tới dev không đọc vì toàn báo động giả (như câu chuyện cậu bé chăn cừu).</p></div>
 
+</div>
+</details>
+
+<details class="exp" id="exp-hsts">
+<summary><span class="qn">09</span><span>HSTS · ép trình duyệt dùng HTTPS</span></summary>
+<div class="body">
+<p><b>Là gì:</b> HSTS yêu cầu trình duyệt chỉ truy cập website bằng HTTPS, tránh việc attacker can thiệp và hạ kết nối từ HTTPS xuống HTTP (<b>SSL Stripping</b>).</p>
+<div class="blk warn"><h6>Ví dụ · Wi-Fi công cộng</h6><p>Người dùng gõ <code>http://bank.example.com</code>.</p><ul><li><b>Chưa có HSTS:</b> trình duyệt gửi request HTTP trước, rồi mới được chuyển hướng sang HTTPS. Attacker có thể can thiệp đúng ở bước HTTP này.</li><li><b>Đã có HSTS:</b> trình duyệt đã ghi nhớ nên tự nâng URL thành HTTPS <b>trước khi</b> gửi request ra mạng.</li></ul><pre><code>Không có HSTS:  Người dùng -&gt; HTTP -&gt; (attacker can thiệp được) -&gt; HTTPS
+Có HSTS:        Người dùng -&gt; trình duyệt tự nâng HTTPS -&gt; Website</code></pre></div>
+<div class="blk"><h6>Header mẫu</h6><pre><code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code></pre><ul><li><code>max-age</code>: thời gian (giây) trình duyệt ghi nhớ chính sách.</li><li><code>includeSubDomains</code>: áp dụng cho cả subdomain.</li></ul></div>
+<div class="blk ok"><h6>Giải pháp</h6><ul><li>Chỉ bật HSTS sau khi HTTPS đã chạy ổn định.</li><li>Kiểm tra toàn bộ subdomain trước khi bật <code>includeSubDomains</code>.</li><li><b>Preload</b> bảo vệ được cả lần truy cập đầu tiên, nhưng domain phải được đưa vào preload list của trình duyệt.</li></ul></div>
+<div class="blk warn"><h6>Lưu ý</h6><p>HSTS chỉ có tác dụng từ <b>lần truy cập thứ hai</b> (khi trình duyệt đã nhận header qua HTTPS), trừ khi domain nằm trong preload list. Header này bị trình duyệt bỏ qua nếu nhận qua HTTP.</p></div>
+</div>
+</details>
+
+<details class="exp" id="exp-samesite">
+<summary><span class="qn">10</span><span>SameSite · Strict và Lax khác nhau về UX</span></summary>
+<div class="body">
+<p><b>Là gì:</b> SameSite quyết định trình duyệt có gửi cookie trong request có ngữ cảnh cross-site hay không. Nó giúp hạn chế CSRF.</p>
+<div class="blk"><h6>Ví dụ · website ngân hàng</h6><p>Người dùng đang đăng nhập <code>bank.com</code>, mở email và click link dẫn về <code>bank.com</code>.</p><ol class="flow"><li><b><code>SameSite=Strict</code>:</b> trình duyệt <b>không</b> gửi session cookie trong điều hướng cross-site, nên website có thể bắt đăng nhập lại. UX kém.</li><li><b><code>SameSite=Lax</code>:</b> trình duyệt gửi cookie trong điều hướng top-level bằng GET, người dùng giữ được phiên. UX thuận tiện hơn.</li></ol></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tình huống</th><th>Strict</th><th>Lax</th></tr></thead><tbody>
+<tr><td>Click link từ website khác đến website của bạn</td><td>Không gửi cookie</td><td>Gửi cookie nếu là top-level navigation bằng method an toàn như GET</td></tr>
+<tr><td>Request POST từ website khác</td><td>Không gửi cookie</td><td>Không gửi cookie</td></tr>
+<tr><td>Điều hướng nội bộ cùng site</td><td>Gửi cookie</td><td>Gửi cookie</td></tr>
+<tr><td>Mức hạn chế CSRF</td><td>Chặt hơn</td><td>Linh hoạt hơn</td></tr>
+</tbody></table></div>
+<div class="blk ok"><h6>Chọn cái nào</h6><ul><li><code>Strict</code>: khu vực cần bảo mật cao, chấp nhận việc người dùng có thể phải đăng nhập lại khi đi từ website bên ngoài.</li><li><code>Lax</code>: phù hợp phần lớn session đăng nhập thông thường, cân bằng bảo mật và UX.</li><li><code>None; Secure</code>: chỉ khi thực sự cần cookie cross-site (nhúng, tích hợp bên thứ ba).</li></ul></div>
+<div class="blk warn"><h6>Lưu ý</h6><p><code>Lax</code> không chặn mọi kiểu CSRF (ví dụ endpoint dùng GET để đổi dữ liệu vẫn bị). Với thao tác thay đổi dữ liệu, vẫn dùng CSRF token và kiểm tra request phù hợp. Xem thêm mục CSRF.</p></div>
+</div>
+</details>
+
+<details class="exp" id="exp-ws">
+<summary><span class="qn">11</span><span>WebSocket · kiểm tra Origin (CSWSH)</span></summary>
+<div class="body">
+<p><b>Là gì:</b> WebSocket bắt đầu bằng một HTTP handshake. Nếu trình duyệt tự gửi cookie đăng nhập trong handshake đó, website độc hại có thể mở kết nối bằng phiên của nạn nhân. Đây là <b>Cross-Site WebSocket Hijacking (CSWSH)</b>.</p>
+<div class="blk warn"><h6>Ví dụ</h6><p>Nạn nhân đã đăng nhập <code>bank.com</code>, rồi mở <code>attacker.com</code>. Trang này chạy:</p><pre><code>const ws = new WebSocket("wss://bank.com/ws");</code></pre><p>Nếu server chấp nhận cookie của nạn nhân, <b>không kiểm tra Origin</b> và cho thực hiện hành động nhạy cảm, attacker đọc được dữ liệu hoặc ra lệnh bằng phiên của nạn nhân. Khác với <code>fetch</code>, WebSocket <b>không bị CORS chặn</b>, nên server tự phải kiểm tra.</p></div>
+<div class="blk"><h6>SameSite có giúp không?</h6><p>Có, như một lớp bổ sung:</p><ul><li><code>Strict</code>: cookie không gửi trong handshake cross-site.</li><li><code>Lax</code>: thường cũng không gửi, vì WebSocket handshake không phải top-level navigation an toàn.</li><li><code>None</code>: cookie có thể gửi cross-site nếu đủ điều kiện khác.</li></ul><p>Không nên chỉ dựa vào SameSite: subdomain khác nhau là cross-origin nhưng vẫn <b>same-site</b>, nên một subdomain bị chiếm vẫn mở được kết nối.</p></div>
+<div class="blk ok"><h6>Giải pháp</h6><ol><li><b>Validate Origin khi handshake</b>, chỉ cho website tin cậy:<pre><code>const allowedOrigins = ["https://app.example.com"];
+if (!allowedOrigins.includes(req.headers.origin)) {
+  return rejectConnection();   // Origin: https://attacker.com -&gt; từ chối
+}</code></pre></li><li><b>Xác thực bằng session/token</b> sau khi kiểm tra Origin. Origin chỉ cho biết kết nối khởi tạo từ site nào, không chứng minh người dùng là ai.</li><li><b>Kiểm tra quyền từng hành động.</b> Kết nối thành công không có nghĩa được làm mọi thứ: mỗi message như <code>join_room</code>, <code>send_message</code>, <code>get_account</code> đều phải kiểm tra quyền (user A xem được phòng A, không xem được phòng B). Cùng ý với BOLA.</li><li><b>Đừng tin Origin từ mọi client.</b> Browser luôn gửi Origin đúng, nhưng công cụ hoặc client tự viết có thể tự đặt header này. Origin là cơ chế chặn truy cập từ browser, không thay authentication.</li></ol></div>
+</div>
+</details>
+
+<details class="exp" id="exp-origin">
+<summary><span class="qn">12</span><span>Origin và Referer</span></summary>
+<div class="body">
+<p>Cả hai đều là request header cho server biết nguồn khởi tạo request, nhưng mức chi tiết khác nhau.</p>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tiêu chí</th><th>Origin</th><th>Referer</th></tr></thead><tbody>
+<tr><td>Nội dung</td><td>Scheme + Host + Port</td><td>URL trang nguồn, có thể gồm path và query</td></tr>
+<tr><td>Ví dụ</td><td><code>https://app.example.com</code></td><td><code>https://app.example.com/account?id=10</code></td></tr>
+<tr><td>Có path / query?</td><td>Không</td><td>Có thể có</td></tr>
+<tr><td>Thường dùng</td><td>CORS, kiểm tra nguồn request</td><td>Analytics, kiểm tra nguồn truy cập, một số cơ chế CSRF</td></tr>
+<tr><td>Có thể thiếu?</td><td>Có, tùy loại request</td><td>Có, tùy <code>Referrer-Policy</code> và trình duyệt</td></tr>
+</tbody></table></div>
+<div class="blk"><h6>Ví dụ</h6><p>Người dùng ở <code>https://app.example.com/account/profile</code> gọi <code>https://api.example.com/user</code>:</p><pre><code>Origin:  https://app.example.com
+Referer: https://app.example.com/account/profile</code></pre><ul><li>Dùng <code>Origin</code> để kiểm tra site nào được phép gọi API.</li><li>Dùng <code>Referer</code> để biết request xuất phát từ trang nào, nếu header được gửi.</li></ul></div>
+<div class="blk ok"><h6>Lưu ý bảo mật</h6><ul><li>Ưu tiên <code>Origin</code> khi cần xác định nguồn request cross-origin.</li><li>Dùng <code>Referer</code> làm tín hiệu bổ sung khi thiếu <code>Origin</code>.</li><li>Không dùng riêng <code>Origin</code> hoặc <code>Referer</code> làm authentication.</li><li>Đừng phụ thuộc vào <code>Referer</code>: trình duyệt có thể cắt path/query hoặc không gửi, theo chính sách riêng tư.</li></ul></div>
 </div>
 </details>
 
