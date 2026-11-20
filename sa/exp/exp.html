@@ -135,6 +135,9 @@ details.nest .cn{font:700 10.5px var(--mono);color:var(--accent);background:var(
 <li><a href="#exp-samesite">SameSite · Strict và Lax khác nhau về UX</a></li>
 <li><a href="#exp-ws">WebSocket · kiểm tra Origin (CSWSH)</a></li>
 <li><a href="#exp-origin">Origin và Referer</a></li>
+<li><a href="#exp-envelope">Envelope encryption và hybrid encryption</a></li>
+<li><a href="#exp-pkce">Authorization Code + PKCE</a></li>
+<li><a href="#exp-totp">TOTP</a></li>
 </ol>
 </nav>
 
@@ -223,6 +226,113 @@ details.nest .cn{font:700 10.5px var(--mono);color:var(--accent);background:var(
 <pre><code>jwt.verify(token, KEY, { algorithms: ['RS256'] });  // hoặc ['HS256'] nếu dùng HS256</code></pre>
 <p><b>Một dòng để nhớ:</b> <code>alg</code> trong token là dữ liệu do kẻ gian kiểm soát được, nên server chỉ được tin thuật toán nó đã cấu hình sẵn.</p>
 </div>
+
+<details class="nest" id="jwt-timing"><summary><span>So sánh token bằng <code>crypto.timingSafeEqual</code></span></summary><div class="nbody">
+<div class="blk warn"><h6>Vấn đề: so sánh thường bị đo thời gian</h6>
+<p>Khi so hai chuỗi bằng <code>===</code>, JavaScript dừng ngay ở ký tự sai đầu tiên. Đúng sai sớm hay muộn làm thời gian phản hồi khác nhau, rất nhỏ nhưng đo được.</p>
+<pre><code>// Có lỗ hổng
+if (userToken === secretToken) { ... }</code></pre>
+<p>Kẻ tấn công thử từng ký tự: <code>a...</code>, <code>b...</code>, và thời gian phản hồi dài hơn một chút khi đoán đúng ký tự đầu. Lặp lại cho từng vị trí, nó lần ra được token. Thực tế cần hàng nghìn lần đo và mạng ổn định, nhưng không phải không thể.</p></div>
+<div class="blk ok"><h6>Giải pháp</h6>
+<p><code>crypto.timingSafeEqual(a, b)</code> so sánh <b>mọi byte</b>, và thời gian không phụ thuộc vào vị trí sai. Hai điều cần biết:</p>
+<ul><li><b>Hai buffer phải cùng độ dài.</b> Nếu khác độ dài, hàm ném <code>RangeError</code>, và độ dài có thể lộ thông tin.</li><li>Nên <b>băm cả hai về cùng độ dài</b> trước khi so, để tránh cả hai vấn đề trên.</li></ul>
+<pre><code>const crypto = require('crypto');
+
+function safeEqual(a, b) {
+  const ha = crypto.createHash('sha256').update(String(a)).digest();
+  const hb = crypto.createHash('sha256').update(String(b)).digest();
+  return crypto.timingSafeEqual(ha, hb); // luôn 32 byte, so sánh đều
+}
+
+if (!safeEqual(userToken, secretToken)) return res.sendStatus(401);</code></pre></div>
+<div class="blk"><h6>Khi nào cần dùng</h6>
+<ul><li>So sánh <b>chữ ký HMAC</b> của webhook (Stripe, GitHub đều ký như vậy).</li><li>So sánh <b>API key</b>, <b>CSRF token</b>, <b>mã OTP</b>, <b>token reset password</b>.</li><li>Bất cứ chỗ nào giá trị so sánh là bí mật và kẻ gian có thể gửi nhiều request để đo.</li></ul>
+<p>Ví dụ kiểm tra webhook:</p>
+<pre><code>const expected = crypto
+  .createHmac('sha256', WEBHOOK_SECRET)
+  .update(rawBody)
+  .digest('hex');
+if (!safeEqual(req.get('X-Signature') || '', expected))
+  return res.sendStatus(401);</code></pre>
+<p>Lưu ý <code>rawBody</code>: phải dùng body gốc trước khi JSON parse, nếu không chữ ký sẽ không khớp.</p></div>
+<div class="blk warn"><h6>Những điều hay nhầm</h6>
+<ul><li><b>Không phải cứ đổi sang <code>timingSafeEqual</code> là xong.</b> Nếu code xử lý trước các nhánh khác nhau (ví dụ "token sai độ dài thì trả lỗi ngay"), thời gian vẫn lộ. Hàm này chỉ bảo vệ bước so sánh.</li><li><b>Không dùng để so mật khẩu.</b> Mật khẩu phải băm bằng Argon2id/bcrypt và <code>verify</code> của thư viện đã làm việc này.</li><li><b>Không dùng <code>==</code> hay <code>localeCompare</code></b> trong so sánh bí mật, vì cũng dừng sớm.</li><li>Trong <code>jwt.verify</code>, thư viện đã xử lý việc so sánh chữ ký. Bạn chỉ cần tự viết <code>timingSafeEqual</code> khi so chuỗi bí mật bằng tay.</li></ul>
+<p><b>Một dòng để nhớ:</b> <code>===</code> dừng ở ký tự sai đầu tiên nên thời gian lộ thông tin; <code>timingSafeEqual</code> so đều mọi byte, nhưng cần hai đầu vào cùng độ dài, nên băm trước rồi so.</p></div>
+</div></details>
+
+<details class="nest" id="jwt-aud"><summary><span>Claim <code>aud</code> trong JWT</span></summary><div class="nbody">
+<div class="blk"><h6><code>aud</code> là gì</h6>
+<p><code>aud</code> là viết tắt của <b>audience</b>, nghĩa là <b>đối tượng được nhận</b>: danh sách dịch vụ mà token được phép dùng. Ví dụ: vé xem phim ghi "rạp A, suất 19h". Vẫn là vé thật, nhưng chỉ có giá trị ở rạp A.</p></div>
+<div class="blk"><h6>Vì sao cần, khi chữ ký đã đúng</h6>
+<p>Chữ ký chứng minh token <b>không bị sửa</b> và <b>do đúng người cấp</b>. Nó không nói token dùng ở đâu. Nếu hai dịch vụ cùng tin một bộ phận cấp token, token của dịch vụ này có chữ ký hợp lệ với dịch vụ kia. Không có <code>aud</code>, dịch vụ kia không biết token không dành cho mình.</p></div>
+<div class="blk warn"><h6>Ví dụ: hai dịch vụ, một token</h6>
+<p>Công ty có ba dịch vụ dùng chung Auth server: <code>shop-web</code>, <code>orders-api</code>, <code>support-api</code>. Người dùng đăng nhập trên app bán hàng và nhận token để gọi đơn hàng, có <code>aud</code> là <code>orders-api</code>. Kẻ tấn công lấy được token này và gửi tới <code>support-api</code>:</p>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Dịch vụ nhận</th><th>Kiểm <code>aud</code></th><th>Kết quả</th></tr></thead><tbody>
+<tr><td><code>orders-api</code></td><td>Khớp tên mình</td><td>Chấp nhận, đúng ý đồ</td></tr>
+<tr><td><code>support-api</code></td><td>Không khớp tên mình</td><td><b>Từ chối</b></td></tr>
+<tr><td><code>support-api</code> không kiểm <code>aud</code></td><td>Bỏ qua</td><td><b>Chấp nhận, lỗ hổng</b></td></tr>
+</tbody></table></div></div>
+<div class="blk"><h6>Cách API kiểm <code>aud</code></h6>
+<p>Mỗi API chỉ chấp nhận token có tên của chính nó trong <code>aud</code>. Token có <code>aud</code> khác bị từ chối. <code>aud</code> có thể là danh sách khi một token dùng cho nhiều dịch vụ, khi đó API kiểm "danh sách có chứa tên mình không". Chỉ dùng danh sách khi có chủ đích.</p></div>
+<div class="blk"><h6>Client xin token đúng <code>aud</code></h6>
+<p>Khi xin token, client chỉ rõ dịch vụ muốn dùng bằng tham số <code>resource</code> (chuẩn RFC 8707). Auth server đặt <code>aud</code> theo giá trị này. Muốn gọi dịch vụ khác, client phải xin token mới, không dùng lại token cũ.</p></div>
+<div class="blk"><h6>Sequence: token đúng và token sai</h6>
+<pre class="mermaid">---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: Arial
+    noteBkgColor: "#FFFBEB"
+    noteBorderColor: "#F59E0B"
+    actorBkg: "#EEF2FF"
+    actorBorder: "#4F46E5"
+---
+sequenceDiagram
+    autonumber
+    participant A as App
+    participant AS as Auth server
+    participant O as orders-api
+    participant P as support-api
+
+    A->>AS: Xin token với resource = orders-api
+    AS->>A: Token aud = orders-api
+    A->>O: Gọi GET /orders kèm token
+    O->>O: Kiểm aud khớp orders-api, chấp nhận
+    O->>A: Trả dữ liệu
+
+    A->>P: Gửi cùng token tới support-api
+    P->>P: Kiểm aud, không khớp support-api
+    P->>A: 401 Từ chối</pre></div>
+<div class="blk warn"><h6>Các lỗi hay gặp</h6>
+<ul><li><b>Không kiểm <code>aud</code> ở API.</b> Lỗi phổ biến nhất, và kẻ tấn công lợi dụng được ngay.</li><li><b>Nhầm <code>aud</code> của ID token với access token.</b> ID token có <code>aud</code> là <code>client_id</code> của app. Access token có <code>aud</code> là tên API.</li><li><b>Mọi dịch vụ dùng chung một <code>aud</code>.</b> Khi đó <code>aud</code> không còn tác dụng phân biệt.</li><li><b>Đặt <code>aud</code> theo từng endpoint.</b> Khó quản lý và thường không cần. Phân quyền từng endpoint nên dùng <code>scope</code>.</li><li><b>Quên <code>aud</code> khi xin token.</b> Token có <code>aud</code> sai, API từ chối.</li></ul>
+<p><b>Tóm gọn:</b> mỗi API tự kiểm <code>aud</code> là tên của chính nó. <code>aud</code> đi cùng <code>iss</code> và <code>exp</code> để chứng minh token đúng nơi, đúng người, còn hạn.</p></div>
+</div></details>
+
+<details class="nest" id="jwt-rotate"><summary><span>Rotate refresh token và phát hiện đánh cắp</span></summary><div class="nbody">
+<p>Mỗi lần dùng refresh token để lấy access token mới, server cấp refresh token mới và vô hiệu hóa cái cũ. Mọi refresh token thuộc cùng một chuỗi đăng nhập gọi là một <b>family</b>.</p>
+<div class="blk ok"><h6>Phát hiện trộm</h6>
+<p>Server lưu băm của refresh token hiện hành. Nếu một token đã bị thay thế xuất hiện lại, nghĩa là ai đó đã có bản sao trước đó, hoặc kẻ gian hoặc chủ thật. Server thu hồi cả family và buộc đăng nhập lại.</p>
+<pre><code>async function refresh(oldToken) {
+  const hash = sha256(oldToken);
+  const row = await db.get('SELECT * FROM refresh WHERE hash = ?', [hash]);
+  if (!row) return res.sendStatus(401);
+  if (row.used) {                              // token cũ bị dùng lại: có bản sao bị lộ
+    await db.run('DELETE FROM refresh WHERE family = ?', [row.family]);
+    return res.sendStatus(401);
+  }
+  await db.run('UPDATE refresh SET used = 1 WHERE hash = ?', [hash]);
+  const next = newRefreshToken();
+  await db.run('INSERT INTO refresh (hash, family, used) VALUES (?, ?, 0)',
+               [sha256(next), row.family]);
+  return { access: signAccess(row.user_id), refresh: next };
+}</code></pre></div>
+<div class="blk warn"><h6>Lưu ý</h6><p>Cần một khoảng nhỏ cho lỗi mạng (client gửi lại vì mất phản hồi), nếu không sẽ tự đăng xuất oan.</p></div>
+</div></details>
+
+<details class="nest" id="jwt-verify-bugs"><summary><span>Bốn lỗi hay gặp khi verify JWT</span></summary><div class="nbody">
+<div class="blk warn"><h6>Bốn lỗi</h6>
+<ul><li><b>Không cố định thuật toán:</b> chấp nhận <code>alg: none</code>, hoặc cho token tự chọn thuật toán (lỗi nhầm RS256 thành HS256). Phải truyền <code>algorithms: [...]</code>.</li><li><b>Không kiểm <code>iss</code>, <code>aud</code>:</b> token của service khác hoặc app khác vẫn được chấp nhận.</li><li><b>Dùng <code>decode</code> thay vì <code>verify</code>:</b> đọc payload mà không kiểm chữ ký, rất hay gặp trong code mới viết.</li><li><b>Bỏ qua <code>exp</code> hoặc secret yếu:</b> token không có <code>exp</code> sống mãi; secret HS256 ngắn hoặc đoán được cho phép kẻ tấn công tự ký token offline.</li></ul></div>
+</div></details>
 </div>
 </details>
 
@@ -623,8 +733,9 @@ Có HSTS:        Người dùng -&gt; trình duyệt tự nâng HTTPS -&gt; Webs
 </details>
 
 <details class="exp" id="exp-ws">
-<summary><span class="qn">11</span><span>WebSocket · kiểm tra Origin (CSWSH)</span></summary>
+<summary><span class="qn">11</span><span>WebSocket</span></summary>
 <div class="body">
+<details class="nest" id="ws-origin" open><summary><span>Kiểm tra Origin (CSWSH)</span></summary><div class="nbody">
 <p><b>Là gì:</b> WebSocket bắt đầu bằng một HTTP handshake. Nếu trình duyệt tự gửi cookie đăng nhập trong handshake đó, website độc hại có thể mở kết nối bằng phiên của nạn nhân. Đây là <b>Cross-Site WebSocket Hijacking (CSWSH)</b>.</p>
 <div class="blk warn"><h6>Ví dụ</h6><p>Nạn nhân đã đăng nhập <code>bank.com</code>, rồi mở <code>attacker.com</code>. Trang này chạy:</p><pre><code>const ws = new WebSocket("wss://bank.com/ws");</code></pre><p>Nếu server chấp nhận cookie của nạn nhân, <b>không kiểm tra Origin</b> và cho thực hiện hành động nhạy cảm, attacker đọc được dữ liệu hoặc ra lệnh bằng phiên của nạn nhân. Khác với <code>fetch</code>, WebSocket <b>không bị CORS chặn</b>, nên server tự phải kiểm tra.</p></div>
 <div class="blk"><h6>SameSite có giúp không?</h6><p>Có, như một lớp bổ sung:</p><ul><li><code>Strict</code>: cookie không gửi trong handshake cross-site.</li><li><code>Lax</code>: thường cũng không gửi, vì WebSocket handshake không phải top-level navigation an toàn.</li><li><code>None</code>: cookie có thể gửi cross-site nếu đủ điều kiện khác.</li></ul><p>Không nên chỉ dựa vào SameSite: subdomain khác nhau là cross-origin nhưng vẫn <b>same-site</b>, nên một subdomain bị chiếm vẫn mở được kết nối.</p></div>
@@ -632,6 +743,19 @@ Có HSTS:        Người dùng -&gt; trình duyệt tự nâng HTTPS -&gt; Webs
 if (!allowedOrigins.includes(req.headers.origin)) {
   return rejectConnection();   // Origin: https://attacker.com -&gt; từ chối
 }</code></pre></li><li><b>Xác thực bằng session/token</b> sau khi kiểm tra Origin. Origin chỉ cho biết kết nối khởi tạo từ site nào, không chứng minh người dùng là ai.</li><li><b>Kiểm tra quyền từng hành động.</b> Kết nối thành công không có nghĩa được làm mọi thứ: mỗi message như <code>join_room</code>, <code>send_message</code>, <code>get_account</code> đều phải kiểm tra quyền (user A xem được phòng A, không xem được phòng B). Cùng ý với BOLA.</li><li><b>Đừng tin Origin từ mọi client.</b> Browser luôn gửi Origin đúng, nhưng công cụ hoặc client tự viết có thể tự đặt header này. Origin là cơ chế chặn truy cập từ browser, không thay authentication.</li></ol></div>
+</div></details>
+
+<details class="nest" id="ws-auth"><summary><span>Xác thực khi không gắn được header</span></summary><div class="nbody">
+<p><code>new WebSocket(url)</code> của trình duyệt không cho đặt header <code>Authorization</code>. Cách làm thường dùng là <b>vé một lần (ticket)</b>:</p>
+<ol class="flow">
+<li>Client gọi REST API có xác thực bình thường, nhận một ticket ngẫu nhiên, hạn khoảng 30 giây, gắn với user.</li>
+<li>Client mở <code>wss://chat.example.com/ws?ticket=...</code>.</li>
+<li>Server kiểm ticket, xóa ngay (dùng một lần), rồi gắn kết nối với user đó.</li>
+<li>Server cũng kiểm header <code>Origin</code> như mục trên.</li>
+</ol>
+<div class="blk warn"><h6>Lưu ý</h6><p>Không dùng access token trong URL, vì URL hay bị ghi vào log. Ticket ngắn hạn và dùng một lần thì rủi ro lộ thấp.</p></div>
+<div class="blk"><h6>Cách khác</h6><p>Kết nối không xác thực, client gửi token ở tin nhắn đầu tiên, server đóng socket nếu không nhận được token trong vài giây.</p></div>
+</div></details>
 </div>
 </details>
 
@@ -652,6 +776,265 @@ Referer: https://app.example.com/account/profile</code></pre><ul><li>Dùng <code
 </div>
 </details>
 
+<details class="exp" id="exp-envelope">
+<summary><span class="qn">13</span><span>Envelope encryption và hybrid encryption</span></summary>
+<div class="body">
+<div class="blk"><h6>Ý tưởng chung</h6>
+<p>Cả hai đều dùng <b>hai lớp khóa</b>: một khóa đối xứng nhanh (AES) mã hóa <b>dữ liệu thật</b>, và một khóa khác "bọc" khóa đối xứng đó để cất hoặc gửi an toàn. Lý do: mã hóa bất đối xứng (RSA) quá chậm để mã hóa cả file lớn, nên chỉ dùng nó để bảo vệ khóa đối xứng.</p></div>
+
+<details class="nest" id="env-envelope"><summary><span>Envelope encryption</span></summary><div class="nbody">
+<p><b>Định nghĩa:</b> dùng một <b>khóa dữ liệu (DEK)</b> ngẫu nhiên để mã hóa dữ liệu, rồi dùng <b>khóa bọc (KEK)</b> nằm trong KMS/HSM để mã hóa DEK. Lưu DEK đã bọc cạnh dữ liệu. KEK không bao giờ rời KMS.</p>
+<p>Hình dung: bạn bỏ tài liệu vào <b>phong bì</b> (DEK khóa phong bì), rồi bỏ phong bì vào <b>két sắt</b> (KEK). Muốn đọc tài liệu thì phải mở được két.</p>
+<div class="blk"><h6>Ví dụ thực tế</h6><p>App chat lưu tin nhắn đã mã hóa trong MySQL. Mỗi người dùng có một DEK. DEK được bọc bằng KEK trong AWS KMS.</p>
+<pre><code>const crypto = require('crypto');
+const {
+  KMSClient,
+  GenerateDataKeyCommand,
+  DecryptCommand,
+} = require('@aws-sdk/client-kms');
+const kms = new KMSClient({});
+const KeyId = 'arn:aws:kms:...:key/abc'; // KEK, nằm trong KMS
+
+// Ghi: sinh DEK, mã hóa tin, cất DEK đã bọc cùng dữ liệu
+async function encryptMessage(text) {
+  const { Plaintext, CiphertextBlob } = await kms.send(
+    new GenerateDataKeyCommand({ KeyId, KeySpec: 'AES_256' }),
+  );
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', Plaintext, iv);
+  const ct = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  Plaintext.fill(0); // xóa DEK bản rõ khỏi RAM
+  return { encDek: CiphertextBlob, iv, ct, tag }; // lưu cả 4 vào DB
+}
+
+// Đọc: nhờ KMS mở DEK, rồi giải mã tin
+async function decryptMessage({ encDek, iv, ct, tag }) {
+  const { Plaintext } = await kms.send(
+    new DecryptCommand({ CiphertextBlob: encDek }),
+  );
+  const d = crypto.createDecipheriv('aes-256-gcm', Plaintext, iv);
+  d.setAuthTag(tag);
+  const text = Buffer.concat([d.update(ct), d.final()]).toString('utf8');
+  Plaintext.fill(0);
+  return text;
+}</code></pre></div>
+<div class="blk"><h6>Sơ đồ</h6>
+<pre class="mermaid">---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: Arial
+    noteBkgColor: "#FFFBEB"
+    noteBorderColor: "#F59E0B"
+    actorBkg: "#EEF2FF"
+    actorBorder: "#4F46E5"
+---
+sequenceDiagram
+    autonumber
+    participant A as App
+    participant K as KMS (giữ KEK)
+    participant D as Database
+
+    rect rgb(226, 245, 230)
+    Note over A,D: GHI: mã hóa dữ liệu
+    A->>K: GenerateDataKey (xin DEK mới)
+    K->>A: DEK (bản rõ) + DEK đã bọc bằng KEK
+    Note over A: Dùng DEK bản rõ mã hóa tin nhắn (AES-256-GCM)
+    Note over A: Xóa DEK bản rõ khỏi RAM
+    A->>D: Lưu ciphertext + DEK đã bọc + IV + tag
+    end
+
+    rect rgb(226, 240, 255)
+    Note over A,D: ĐỌC: giải mã
+    A->>D: Lấy ciphertext + DEK đã bọc
+    D->>A: ciphertext + DEK đã bọc
+    A->>K: Decrypt (DEK đã bọc)
+    Note over K: KEK không rời KMS
+    K->>A: DEK bản rõ
+    Note over A: Giải mã tin nhắn bằng DEK
+    end</pre></div>
+<div class="blk ok"><h6>Lợi ích</h6>
+<ul><li>KEK không lộ, vì nó không bao giờ rời KMS. Lộ DB chỉ có DEK đã bọc, vô dụng nếu không có KMS.</li><li><b>Xoay khóa dễ:</b> đổi KEK thì chỉ cần bọc lại các DEK, không phải mã hóa lại toàn bộ dữ liệu.</li><li><b>Thu hồi nhanh:</b> vô hiệu hóa KEK là mọi dữ liệu liên quan không đọc được.</li><li>Mỗi người dùng hoặc mỗi file có DEK riêng, nên lộ một DEK chỉ ảnh hưởng phạm vi đó.</li></ul></div>
+</div></details>
+
+<details class="nest" id="env-hybrid"><summary><span>Hybrid encryption</span></summary><div class="nbody">
+<p><b>Định nghĩa:</b> dùng <b>khóa công khai của người nhận</b> để bọc một <b>khóa đối xứng ngẫu nhiên mới cho mỗi tin</b>, rồi mã hóa nội dung bằng khóa đối xứng đó. Người nhận dùng khóa bí mật của mình để mở khóa đối xứng và đọc tin. TLS, PGP, HPKE đều theo kiểu này.</p>
+<p>Hình dung: bạn bỏ tin vào <b>hộp khóa</b> đã mã hóa bằng khóa công khai của người nhận. Mỗi tin dùng một hộp mới, chỉ người có chìa khóa bí mật mới mở được.</p>
+<div class="blk"><h6>Sample (ECDH + AES-GCM)</h6>
+<pre><code>const crypto = require('crypto');
+
+// Người nhận có sẵn cặp khóa X25519
+const recv = crypto.generateKeyPairSync('x25519');
+
+// Người gửi: sinh khóa tạm, tính khóa chung, mã hóa tin
+const eph = crypto.generateKeyPairSync('x25519');
+const shared = crypto.diffieHellman({
+  privateKey: eph.privateKey,
+  publicKey: recv.publicKey,
+});
+const key = crypto.hkdfSync('sha256', shared, Buffer.alloc(0), 'msg', 32);
+const iv = crypto.randomBytes(12);
+const c = crypto.createCipheriv('aes-256-gcm', Buffer.from(key), iv);
+const ct = Buffer.concat([c.update('Chào, tin mật', 'utf8'), c.final()]);
+// gửi: eph.publicKey + iv + ct + c.getAuthTag()
+
+// Người nhận: từ khóa tạm công khai và khóa bí mật của mình, tính lại cùng khóa
+const shared2 = crypto.diffieHellman({
+  privateKey: recv.privateKey,
+  publicKey: eph.publicKey,
+});
+const key2 = crypto.hkdfSync('sha256', shared2, Buffer.alloc(0), 'msg', 32);
+const d = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key2), iv);
+d.setAuthTag(c.getAuthTag());
+console.log(Buffer.concat([d.update(ct), d.final()]).toString()); // "Chào, tin mật"</code></pre></div>
+<div class="blk"><h6>Sơ đồ</h6>
+<pre class="mermaid">---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: Arial
+    noteBkgColor: "#FFFBEB"
+    noteBorderColor: "#F59E0B"
+    actorBkg: "#EEF2FF"
+    actorBorder: "#4F46E5"
+---
+sequenceDiagram
+    autonumber
+    participant S as Người gửi
+    participant R as Người nhận
+
+    Note over R: Có cặp khóa, khóa bí mật giữ kín
+    R->>S: Khóa công khai của R
+    Note over S: Tạo khóa phiên ngẫu nhiên K (AES)
+    Note over S: Mã hóa tin bằng K (đối xứng, nhanh)
+    Note over S: Mã hóa K bằng khóa công khai của R (bất đối xứng)
+    S->>R: K đã bọc + tin đã mã hóa
+    Note over R: Dùng khóa bí mật mở K
+    Note over R: Dùng K giải mã tin</pre></div>
+</div></details>
+
+<div class="blk"><h6>So sánh</h6>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>Envelope</th><th>Hybrid</th></tr></thead><tbody>
+<tr><td>Mục đích</td><td>Bảo vệ dữ liệu <b>lưu trữ</b> (at rest)</td><td>Bảo vệ dữ liệu <b>truyền đi</b> (in transit)</td></tr>
+<tr><td>Ai giữ khóa bọc</td><td>Một hệ thống (KMS), thường cùng một tổ chức</td><td>Người nhận giữ khóa bí mật</td></tr>
+<tr><td>Khóa đối xứng</td><td>Thường dùng lại (DEK theo người dùng, theo file)</td><td>Mới cho <b>mỗi tin</b></td></tr>
+<tr><td>Thu hồi</td><td>Vô hiệu KEK</td><td>Không có cách thu hồi đơn giản, khóa phiên đã gửi đi</td></tr>
+<tr><td>Ví dụ</td><td>AWS KMS, Google Cloud KMS, mã hóa cột trong DB</td><td>TLS, PGP, Signal (phần thiết lập khóa), HPKE</td></tr>
+</tbody></table></div>
+<p><b>Điểm chung:</b> cả hai đều là "mã hóa dữ liệu bằng khóa đối xứng, rồi bảo vệ khóa đó bằng khóa khác".</p>
+<p><b>Điểm khác cần nhớ:</b> envelope dùng để <b>giữ dữ liệu</b> an toàn ở một nơi, còn hybrid dùng để <b>gửi dữ liệu</b> cho người khác mà không cần chia sẻ khóa trước.</p></div>
+</div>
+</details>
+
+<details class="exp" id="exp-pkce">
+<summary><span class="qn">14</span><span>Authorization Code + PKCE</span></summary>
+<div class="body">
+<div class="blk"><h6>Bối cảnh</h6>
+<p>Mai dùng app giao đồ ăn trên điện thoại và muốn đăng nhập bằng tài khoản Google. Mai không muốn đưa mật khẩu Google cho app. Vậy app cần một cách để Google xác nhận "đúng là Mai" mà không cần biết mật khẩu.</p></div>
+<div class="blk"><h6>Ý tưởng Authorization Code</h6>
+<p>Hình dung Google là <b>quầy bảo mật của ngân hàng</b>, app là <b>nhân viên giao hàng</b>.</p>
+<ol class="flow"><li>Mai tự đến quầy bảo mật (trang Google) và nhập mật khẩu. App không được xem.</li><li>Quầy đưa Mai một <b>phiếu nhận hàng</b> (<i>authorization code</i>), rồi Mai mang phiếu về cho app.</li><li>App mang phiếu đó đến <b>quầy phát thẻ</b> để đổi lấy <b>thẻ thật</b> (<i>access token</i>) dùng để lấy đơn hàng.</li></ol>
+<p>Lý do không đưa thẻ thật ngay lúc đầu: phiếu nằm trên đường Mai đi (trình duyệt, điện thoại), có thể bị nhìn thấy. Thẻ thật quan trọng hơn, nên chỉ đổi ở quầy phát thẻ, qua kênh riêng.</p></div>
+<div class="blk warn"><h6>Vấn đề: phiếu có thể bị nhặt</h6>
+<p>Trên điện thoại, nhiều app có thể đăng ký cùng một "đường dẫn quay về" (ví dụ <code>giaodoan://</code>). Nếu một app giả chiếm được đường đó, nó nhận được phiếu thay vì app thật. Nếu quầy phát thẻ chỉ hỏi "có phiếu không?", app giả đưa phiếu là được thẻ của Mai.</p></div>
+<div class="blk ok"><h6>PKCE: thêm một mật mã chỉ app giữ</h6>
+<p>PKCE giống như app tự <b>đặt một mật mã tạm</b> trước khi đi:</p>
+<ol class="flow"><li><b>Trước khi đi:</b> app tự tạo một mật mã ngẫu nhiên (<code>code_verifier</code>) và giữ trong máy. Nó tạo một <b>dấu hiệu</b> (<code>code_challenge</code>) từ mật mã đó, không đọc ngược được. App đưa dấu hiệu cho quầy bảo mật và giữ mật mã gốc.</li><li><b>Khi đổi phiếu:</b> app mang phiếu <b>và mật mã gốc</b> đến quầy phát thẻ.</li><li><b>Quầy kiểm tra:</b> lấy mật mã gốc tạo lại dấu hiệu, so với dấu hiệu đã nhận lúc đầu. Khớp thì phát thẻ, không khớp thì từ chối.</li></ol>
+<p>Kẻ nhặt được phiếu không biết mật mã gốc, nên không đổi được thẻ.</p></div>
+<div class="blk"><h6>Ai biết gì</h6>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Người</th><th>Biết phiếu</th><th>Biết dấu hiệu</th><th>Biết mật mã gốc</th></tr></thead><tbody>
+<tr><td>Mai</td><td>Có (không dùng được)</td><td>Không quan tâm</td><td>Không</td></tr>
+<tr><td>App thật</td><td>Có</td><td>Có (đã gửi đi)</td><td><b>Có, chỉ app giữ</b></td></tr>
+<tr><td>Google</td><td>Có</td><td>Có</td><td>Không, chỉ kiểm tra</td></tr>
+<tr><td>Kẻ nhặt phiếu</td><td><b>Có</b></td><td>Không thấy</td><td><b>Không</b></td></tr>
+</tbody></table></div></div>
+<div class="blk"><h6>Toàn bộ sự việc</h6>
+<ol class="flow"><li>Mai bấm "Đăng nhập bằng Google".</li><li>App tạo mật mã tạm và gửi dấu hiệu cho Google.</li><li>Google yêu cầu Mai nhập mật khẩu và đồng ý.</li><li>Google trả Mai về app kèm phiếu.</li><li>App mang phiếu và mật mã gốc đến quầy phát thẻ.</li><li>Google kiểm tra khớp, phát thẻ thật.</li><li>App dùng thẻ để lấy đơn hàng của Mai.</li></ol>
+<p>Nếu app giả chặn được phiếu ở bước 4, nó đem đến quầy phát thẻ nhưng <b>không có mật mã gốc</b>, nên bị từ chối.</p></div>
+<div class="blk"><h6>Vì sao cần PKCE trên điện thoại</h6>
+<p>App cài trên điện thoại thì ai tải về cũng xem được mọi thứ trong app, nên không giữ được một "mật khẩu của app" bí mật. PKCE thay thế bằng mật mã tạm mỗi lần đăng nhập, và mật mã này không tồn tại trong app sau khi xong.</p>
+<p><b>Tóm gọn:</b> <b>phiếu</b> (code) là thứ có thể bị nhặt; <b>mật mã</b> (verifier) là thứ chỉ app giữ. Có mật mã thì phiếu bị nhặt cũng vô dụng.</p></div>
+</div>
+</details>
+
+<details class="exp" id="exp-totp">
+<summary><span class="qn">15</span><span>TOTP</span></summary>
+<div class="body">
+<div class="blk"><h6>TOTP là gì</h6>
+<p>TOTP là mã 6 số đổi mỗi 30 giây, hiện trong app xác thực như Google Authenticator, Authy hoặc 1Password. Hình dung hai người có cùng <b>một quyển sổ mã</b> và <b>đồng hồ đúng giờ</b>. Cứ mỗi 30 giây, cả hai mở sổ đúng trang của thời điểm đó và đọc ra cùng một số. Người không có quyển sổ thì không đoán được.</p></div>
+<div class="blk"><h6>Ba thành phần</h6>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Thành phần</th><th>Là gì</th><th>Ai giữ</th></tr></thead><tbody>
+<tr><td>Secret</td><td>Chuỗi bí mật riêng cho từng người dùng</td><td>Server (mã hóa) và app</td></tr>
+<tr><td>Thời gian</td><td>Chia thành các khoảng 30 giây</td><td>Cả hai, đồng hồ phải đúng</td></tr>
+<tr><td>Mã 6 số</td><td>Tính ra từ secret và khoảng thời gian</td><td>App hiện, server tự tính để so</td></tr>
+</tbody></table></div>
+<p>Từ secret và thời gian, cả hai đều tính ra cùng một mã. Không có gì phải gửi qua mạng để so sánh, nên kẻ nghe lén không có gì để dùng.</p></div>
+<div class="blk"><h6>Bật 2FA (làm một lần)</h6>
+<pre class="mermaid">---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: Arial
+    noteBkgColor: "#FFFBEB"
+    noteBorderColor: "#F59E0B"
+    actorBkg: "#EEF2FF"
+    actorBorder: "#4F46E5"
+---
+sequenceDiagram
+    autonumber
+    participant U as Người dùng
+    participant App as App xác thực
+    participant S as Server
+
+    U->>S: Bấm bật 2FA
+    Note over S: Sinh secret ngẫu nhiên, lưu dạng mã hóa
+    S->>U: Hiện QR chứa secret
+    U->>App: Quét QR bằng app xác thực
+    Note over App: App lưu secret, tính mã mỗi 30 giây
+    U->>S: Nhập mã đang hiện trong app
+    Note over S: Server tự tính mã từ secret, so khớp
+    S->>U: Khớp, bật 2FA thành công</pre><p>Sau bước này, <b>app và server không cần nói chuyện để tạo mã nữa</b>.</p></div>
+<div class="blk"><h6>Đăng nhập mỗi lần</h6>
+<pre class="mermaid">---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: Arial
+    noteBkgColor: "#FFFBEB"
+    noteBorderColor: "#F59E0B"
+    actorBkg: "#EEF2FF"
+    actorBorder: "#4F46E5"
+---
+sequenceDiagram
+    autonumber
+    participant U as Người dùng
+    participant App as App xác thực
+    participant S as Server
+
+    U->>S: Gửi email và mật khẩu
+    S->>S: Kiểm mật khẩu đúng
+    S->>U: Cấp token tạm, yêu cầu nhập mã 6 số
+    Note over App: App tự tính mã từ secret và thời gian, không gọi server
+    U->>App: Đọc mã đang hiện
+    U->>S: Gửi mã 6 số kèm token tạm
+    S->>S: Tính mã cho 3 khoảng thời gian quanh hiện tại
+    S->>S: So khớp, và kiểm mã này chưa từng dùng
+    S->>U: Cấp phiên đăng nhập</pre><ul><li>App không gọi server để tạo mã. Mã được tính ngay trên máy, nên dùng được khi offline.</li><li>Server không hỏi app mã là gì. Server tự tính từ secret của người dùng rồi so với mã người dùng gửi lên.</li><li>Giao tiếp duy nhất lúc đăng nhập là người dùng gõ mã vào form, và form gửi qua HTTPS.</li></ul></div>
+<div class="blk"><h6>Vì sao server kiểm 3 khoảng (cửa sổ khoảng 90 giây)</h6>
+<p>Server kiểm <b>khoảng trước, khoảng hiện tại và khoảng sau</b>, bao phủ khoảng 90 giây quanh thời điểm nhận mã. Có 2 nguyên nhân:</p>
+<ul><li><b>Đồng hồ lệch:</b> điện thoại có thể sai vài chục giây so với server.</li><li><b>Độ trễ:</b> người dùng gõ mã gần lúc đổi khoảng, và request tới server khi đã sang khoảng mới.</li></ul>
+<p><b>Ví dụ:</b> server đang ở khoảng 1000. Người dùng thấy mã của khoảng 1000 còn 3 giây, gõ xong và gửi thì server đã sang 1001. Nếu server chỉ kiểm khoảng 1001, mã đúng sẽ bị từ chối. Kiểm cả 999, 1000, 1001 thì mã vẫn khớp.</p>
+<p><b>Vì sao không rộng hơn:</b> mỗi khoảng kiểm thêm là thêm một cơ hội đoán. Vì vậy chỉ lệch ±1, và mã đã dùng phải được lưu lại để không dùng lại được trong cửa sổ đó.</p></div>
+<div class="blk"><h6>Kiểm tra đúng thuật toán</h6>
+<p>TOTP có vector chuẩn trong RFC 6238. Với secret là chuỗi ASCII <code>12345678901234567890</code> và thời điểm 59 giây, mã SHA-1 8 số là <code>94287082</code>, nên mã 6 số là <code>287082</code>. Nếu cách tính của bạn ra đúng kết quả này, thuật toán đã chuẩn.</p></div>
+<div class="blk warn"><h6>Lưu ý bảo mật</h6>
+<ul><li><b>Secret được mã hóa, không băm</b>, vì server cần secret để tính lại mã.</li><li><b>Chặn dùng lại:</b> lưu khoảng đã dùng cho mỗi người dùng.</li><li><b>Giới hạn số lần thử:</b> chỉ có một triệu mã, nên phải khóa tạm sau vài lần sai.</li><li><b>Đồng hồ điện thoại phải đúng giờ.</b> Lệch là mã luôn sai dù secret đúng.</li><li><b>TOTP không chống phishing.</b> Kẻ gian dựng trang giả có thể chuyển tiếp mã trong 30 giây. Passkey chống được vì gắn với đúng tên miền.</li></ul>
+<p><b>Tóm gọn:</b> mã 6 số tính từ secret riêng và thời gian. App tính trên máy, server tự tính lại và kiểm 3 khoảng để bù lệch đồng hồ và độ trễ. Mã đã dùng không dùng lại được, và server phải giới hạn số lần thử.</p></div>
+</div>
+</details>
+
+
 </div>
 <script>
 (function(){
@@ -669,7 +1052,7 @@ async function run(scope){
   if(nodes.length){ try{ await mermaid.run({ nodes: nodes }); }catch(e){ nodes.forEach(function(n){ n.dataset.processed='true'; n.style.whiteSpace='pre'; n.style.textAlign='left'; }); console.error(e); } }
 }
 window.addEventListener('load',function(){ run(document); });
-document.querySelectorAll('details.exp').forEach(function(d){ d.addEventListener('toggle',function(){ if(d.open) run(d); }); });
+document.querySelectorAll('details.exp, details.nest').forEach(function(d){ d.addEventListener('toggle',function(){ if(d.open) run(d); }); });
 function openTarget(id){ if(!id) return; var el=document.getElementById(id); if(el && el.tagName==='DETAILS'){ el.open=true; run(el); el.scrollIntoView({behavior:'smooth',block:'start'}); } }
 window.addEventListener('hashchange',function(){ openTarget(location.hash.slice(1)); });
 document.querySelectorAll('.toc a').forEach(function(a){ a.addEventListener('click',function(){ openTarget(a.getAttribute('href').slice(1)); }); });
